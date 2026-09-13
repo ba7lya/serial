@@ -6,7 +6,7 @@ project(ba7lya.serial LANGUAGES CXX)
 
 # --- build options ---
 option(${PROJECT_NAME}_BUILD_EXAMPLE "Build examples" ON )
-option(${PROJECT_NAME}_BUILD_TEST    "Build tests"    OFF)
+option(${PROJECT_NAME}_BUILD_TEST    "Build tests"    ON )
 
 # --- target ---
 add_library(${PROJECT_NAME})

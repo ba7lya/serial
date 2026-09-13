@@ -1,5 +1,5 @@
 ///
-/// @file linux_serial_test.cxx
+/// @file pty_serial_test.cxx
 /// @author BA7LYA (1042140025@qq.com)
 /// @brief Tests the POSIX serial implementation against a pseudo-terminal pair (Linux only).
 /// @version 0.2

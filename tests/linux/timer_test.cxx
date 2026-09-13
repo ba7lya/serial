@@ -1,5 +1,5 @@
 ///
-/// @file linux_timer_test.cxx
+/// @file timer_test.cxx
 /// @author BA7LYA (1042140025@qq.com)
 /// @brief Tests the monotonic millisecond_timer helper of the POSIX backend (Linux only).
 /// @version 0.2
