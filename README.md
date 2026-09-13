@@ -16,7 +16,8 @@ Cross-platform serial port library written in modern C++.
 ## 快速上手 (Quick start)
 
 ```cpp
-#include "ba7lya/serial/serial.hxx"
+#include "serial.hxx"          // 源码树内 / 以 include/ 为搜索路径时
+// 安装为依赖库后: #include <ba7lya/serial/serial.hxx>
 
 using namespace ba7lya::serial;
 
@@ -63,7 +64,7 @@ ctest --test-dir build
 ## 目录结构 (Layout)
 
 ```
-include/ba7lya/serial/   公开头文件 (serial.hxx, exception.hxx)
+include/                 公开头文件 (serial.hxx, exception.hxx)；安装时映射到 include/ba7lya/serial/
 src/serial.cxx           平台无关门面
 src/win/                 Windows 后端 + 串口枚举
 src/linux/               Linux 后端 + 串口枚举
@@ -80,7 +81,7 @@ https://en.wikipedia.org/wiki/RS-423
 
 https://en.wikipedia.org/wiki/RS-449
 
-https://www.ti.com/lit/an/slla037a/slla037a.pdf?ts=1733055324883&ref_url=https%253A%252F%252Fwww.google.com%252F
+https://www.ti.com/lit/an/slla037a/slla037a.pdf
 
 https://en.wikipedia.org/wiki/Serial_communication
 

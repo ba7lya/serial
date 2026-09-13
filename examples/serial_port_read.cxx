@@ -10,7 +10,7 @@
 #include <cstdlib>
 #include <iostream>
 
-#include "ba7lya/serial/serial.hxx"
+#include "serial.hxx"
 
 using namespace ba7lya::serial;
 

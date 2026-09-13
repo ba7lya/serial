@@ -7,7 +7,7 @@
 /// @copyright Copyright (c) 2026
 ///
 
-#include "ba7lya/serial/serial.hxx"
+#include "serial.hxx"
 
 #include <cstddef>
 #include <utility>

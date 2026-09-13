@@ -5,8 +5,8 @@ cmake_minimum_required(VERSION 3.21)
 project(ba7lya.serial LANGUAGES CXX)
 
 # --- build options ---
-option(${PROJECT_NAME}_BUILD_EXAMPLE "Build examples" ON)
-option(${PROJECT_NAME}_BUILD_TEST   "Build tests"    OFF)
+option(${PROJECT_NAME}_BUILD_EXAMPLE "Build examples" ON )
+option(${PROJECT_NAME}_BUILD_TEST    "Build tests"    OFF)
 
 # --- target ---
 add_library(${PROJECT_NAME})
@@ -45,7 +45,12 @@ install(TARGETS ${PROJECT_NAME}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
-install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+# Headers live flat in include/ during development; as an installed dependency
+# they are namespaced under include/ba7lya/serial/.
+install(DIRECTORY include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ba7lya/serial
+    FILES_MATCHING PATTERN "*.hxx"
+)
 
 # --- examples ---
 if(${PROJECT_NAME}_BUILD_EXAMPLE)

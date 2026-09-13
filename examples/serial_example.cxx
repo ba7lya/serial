@@ -12,7 +12,7 @@
 #include <iostream>
 #include <string>
 
-#include "ba7lya/serial/serial.hxx"
+#include "serial.hxx"
 
 using namespace ba7lya::serial;
 

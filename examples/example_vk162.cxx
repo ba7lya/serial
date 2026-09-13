@@ -9,7 +9,7 @@
 
 #include <iostream>
 
-#include "ba7lya/serial/serial.hxx"
+#include "serial.hxx"
 
 ///
 /// @brief Opens the GPS port and prints one NMEA line at a time until interrupted.

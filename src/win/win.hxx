@@ -16,7 +16,7 @@
 #include <string>
 #include <string_view>
 
-#include "ba7lya/serial/serial.hxx"
+#include "serial.hxx"
 
 namespace ba7lya::serial {
 
