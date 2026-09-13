@@ -88,5 +88,3 @@ https://en.wikipedia.org/wiki/Serial_communication
 https://en.wikipedia.org/wiki/Synchronous_serial_communication
 
 https://en.wikipedia.org/wiki/Asynchronous_serial_communication
-
-https://github.com/wjwwood/serial

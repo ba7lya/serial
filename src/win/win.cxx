@@ -49,7 +49,7 @@ std::wstring to_wide(const std::string& text) {
 
 ///
 /// @brief Adds the "\\\\.\\" namespace prefix unless the port already has it.
-/// @note Prefix is required for COM10 and above and for named devices (issue wjwwood/serial#84).
+/// @note The prefix is required for COM10 and above and for named devices.
 /// @param port Wide port name.
 /// @return The prefixed port name.
 ///
