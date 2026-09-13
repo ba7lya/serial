@@ -1,7 +1,7 @@
 ///
 /// @file linux.hxx
 /// @author BA7LYA (1042140025@qq.com)
-/// @brief Linux implementation of the Serial pimpl, based on termios and pselect.
+/// @brief Linux implementation of the serial pimpl, based on termios and pselect.
 /// @version 0.2
 /// @date 2026-09-14
 /// @copyright Copyright (c) 2026
@@ -24,13 +24,13 @@ namespace ba7lya::serial {
 ///
 /// @brief Counts down a millisecond deadline against the monotonic clock.
 ///
-class MillisecondTimer {
+class millisecond_timer {
 public:
     ///
     /// @brief Starts a countdown from now.
     /// @param millis Duration until the deadline expires.
     ///
-    explicit MillisecondTimer(std::uint32_t millis)
+    explicit millisecond_timer(std::uint32_t millis)
         : expiry_(std::chrono::steady_clock::now() + std::chrono::milliseconds(millis)) {}
 
     ///
@@ -47,9 +47,9 @@ private:
 };
 
 ///
-/// @brief Linux serial port implementation behind Serial::impl.
+/// @brief Linux serial port implementation behind serial::impl.
 ///
-class Serial::impl {
+class serial::impl {
 public:
     ///
     /// @brief Stores the requested port configuration and opens the port when one was given.
@@ -154,10 +154,10 @@ public:
     [[nodiscard]] std::string get_port() const;
 
     /// @brief Stores the timeouts (enforced in read/write, not by the driver).
-    void set_timeout(const Timeout& timeout);
+    void set_timeout(const timeout& value);
 
     /// @return The stored timeout conditions.
-    [[nodiscard]] Timeout get_timeout() const;
+    [[nodiscard]] timeout get_timeout() const;
 
     /// @brief Stores the baud rate and re-applies the configuration when open.
     void set_baudrate(std::uint32_t baudrate);
@@ -210,7 +210,7 @@ private:
 
     bool is_open_ = false;
 
-    Timeout timeout_{};
+    timeout timeout_{};
     std::uint32_t baudrate_{};
     std::uint32_t byte_time_ns_{}; // Nanoseconds to transmit one byte
 

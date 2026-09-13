@@ -25,15 +25,15 @@ using namespace ba7lya::serial;
 namespace {
 
 ///
-/// @brief Fixture that connects the Serial object under test to a fresh pty slave.
+/// @brief Fixture that connects the serial object under test to a fresh pty slave.
 ///
-class SerialTests : public ::testing::Test {
+class serial_tests : public ::testing::Test {
 protected:
     /// @brief Creates a pty pair and opens the slave side through the library.
     void SetUp() override {
         ASSERT_EQ(::openpty(&master_fd_, &slave_fd_, name_, nullptr, nullptr), 0)
             << std::strerror(errno);
-        port_ = std::make_unique<Serial>(std::string(name_), 115200, Timeout::simple_timeout(250));
+        port_ = std::make_unique<serial>(std::string(name_), 115200, timeout::simple_timeout(250));
         ASSERT_TRUE(port_->is_open());
     }
 
@@ -53,7 +53,7 @@ protected:
         );
     }
 
-    std::unique_ptr<Serial> port_;
+    std::unique_ptr<serial> port_;
     int master_fd_ = -1;
     int slave_fd_ = -1;
     char name_[100]{};
@@ -62,7 +62,7 @@ protected:
 ///
 /// @brief Data written to the master end is read back through the library.
 ///
-TEST_F(SerialTests, readWorks) {
+TEST_F(serial_tests, readWorks) {
     feed_master("abc\n");
     EXPECT_EQ(port_->read(4), "abc\n");
 }
@@ -70,7 +70,7 @@ TEST_F(SerialTests, readWorks) {
 ///
 /// @brief Data written through the library arrives at the master end.
 ///
-TEST_F(SerialTests, writeWorks) {
+TEST_F(serial_tests, writeWorks) {
     ASSERT_EQ(port_->write("abc\n"), 4u);
     std::array<char, 5> buf{};
     const ssize_t n = ::read(master_fd_, buf.data(), 4);
@@ -81,7 +81,7 @@ TEST_F(SerialTests, writeWorks) {
 ///
 /// @brief A read with nothing to deliver times out and yields an empty string.
 ///
-TEST_F(SerialTests, timeoutWorks) {
+TEST_F(serial_tests, timeoutWorks) {
     EXPECT_EQ(port_->read(1), "");
     feed_master("abc\n"); // Still usable after a timeout.
     EXPECT_EQ(port_->read(4), "abc\n");
@@ -90,7 +90,7 @@ TEST_F(SerialTests, timeoutWorks) {
 ///
 /// @brief A timed-out read still returns the partial data that had arrived.
 ///
-TEST_F(SerialTests, partialRead) {
+TEST_F(serial_tests, partialRead) {
     feed_master("abc\n");
     EXPECT_EQ(port_->read(10), "abc\n");
     feed_master("abc\n"); // Still usable afterwards.
@@ -100,7 +100,7 @@ TEST_F(SerialTests, partialRead) {
 ///
 /// @brief readline stops at the newline; further calls return the following lines.
 ///
-TEST_F(SerialTests, readlineWorks) {
+TEST_F(serial_tests, readlineWorks) {
     feed_master("line1\nline2\n");
     EXPECT_EQ(port_->readline(64), "line1\n");
     EXPECT_EQ(port_->readline(64), "line2\n");
@@ -109,7 +109,7 @@ TEST_F(SerialTests, readlineWorks) {
 ///
 /// @brief wait_readable reports readability before a read of queued data.
 ///
-TEST_F(SerialTests, waitReadableWorks) {
+TEST_F(serial_tests, waitReadableWorks) {
     feed_master("xyz");
     EXPECT_TRUE(port_->wait_readable());
     EXPECT_EQ(port_->read(3), "xyz");

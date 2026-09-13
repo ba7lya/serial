@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
     std::ostringstream contents;
     contents << input_file.rdbuf();
 
-    Serial serial_port("/dev/ttyUSB1", 115200, Timeout::simple_timeout(1000));
+    serial serial_port("/dev/ttyUSB1", 115200, timeout::simple_timeout(1000));
     if (!serial_port.is_open()) {
         std::cerr << "The serial port did not open." << std::endl;
         return EXIT_FAILURE;

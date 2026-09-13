@@ -30,7 +30,7 @@ void print_usage() {
 /// @param request Extra bytes to ask for beyond the string length (0, +1 or -1).
 /// @param iterations Number of rounds to run.
 ///
-void loop_rounds(Serial& serial, const std::string& test_string, int request, int iterations) {
+void loop_rounds(serial& serial, const std::string& test_string, int request, int iterations) {
     for (int count = 0; count < iterations; ++count) {
         const size_t bytes_written = serial.write(test_string);
         const std::string result
@@ -87,20 +87,20 @@ int run(int argc, char** argv) {
     const std::string test_string = argc == 4 ? argv[3] : "Testing.";
 
     // port, baudrate, timeout in milliseconds
-    Serial serial(port, baudrate, Timeout::simple_timeout(1000));
+    serial serial(port, baudrate, timeout::simple_timeout(1000));
     std::cout << "Is the serial port open? " << (serial.is_open() ? "Yes." : "No.") << "\n";
 
-    std::cout << "Timeout == 1000ms, asking for 1 more byte than written.\n";
+    std::cout << "timeout == 1000ms, asking for 1 more byte than written.\n";
     loop_rounds(serial, test_string, +1, 10);
 
-    serial.set_timeout(Timeout::max(), 250, 0, 250, 0);
-    std::cout << "Timeout == 250ms, asking for 1 more byte than written.\n";
+    serial.set_timeout(timeout::max(), 250, 0, 250, 0);
+    std::cout << "timeout == 250ms, asking for 1 more byte than written.\n";
     loop_rounds(serial, test_string, +1, 10);
 
-    std::cout << "Timeout == 250ms, asking for exactly what was written.\n";
+    std::cout << "timeout == 250ms, asking for exactly what was written.\n";
     loop_rounds(serial, test_string, 0, 10);
 
-    std::cout << "Timeout == 250ms, asking for 1 less than was written.\n";
+    std::cout << "timeout == 250ms, asking for 1 less than was written.\n";
     loop_rounds(serial, test_string, -1, 10);
 
     return EXIT_SUCCESS;

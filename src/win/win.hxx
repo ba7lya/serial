@@ -1,7 +1,7 @@
 ///
 /// @file win.hxx
 /// @author BA7LYA (1042140025@qq.com)
-/// @brief Windows implementation of the Serial pimpl, based on the Win32 comm API.
+/// @brief Windows implementation of the serial pimpl, based on the Win32 comm API.
 /// @version 0.2
 /// @date 2026-09-14
 /// @copyright Copyright (c) 2026
@@ -21,9 +21,9 @@
 namespace ba7lya::serial {
 
 ///
-/// @brief Win32 serial port implementation behind Serial::impl.
+/// @brief Win32 serial port implementation behind serial::impl.
 ///
-class Serial::impl {
+class serial::impl {
 public:
     ///
     /// @brief Stores the requested port configuration and opens the port when one was given.
@@ -134,10 +134,10 @@ public:
     [[nodiscard]] std::string get_port() const;
 
     /// @brief Stores the timeouts and re-applies them when the port is open.
-    void set_timeout(const Timeout& timeout);
+    void set_timeout(const timeout& value);
 
     /// @return The stored timeout conditions.
-    [[nodiscard]] Timeout get_timeout() const;
+    [[nodiscard]] timeout get_timeout() const;
 
     /// @brief Stores the baud rate and re-applies the configuration when open.
     void set_baudrate(std::uint32_t baudrate);
@@ -180,7 +180,7 @@ private:
     HANDLE fd_ = INVALID_HANDLE_VALUE;
     bool is_open_ = false;
 
-    Timeout timeout_{};
+    timeout timeout_{};
     std::uint32_t baudrate_{};
     parity parity_{};
     data_bits bytesize_{};

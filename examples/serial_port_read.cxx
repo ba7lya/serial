@@ -19,14 +19,14 @@ using namespace ba7lya::serial;
 /// @return EXIT_SUCCESS when at least one byte was read.
 ///
 int main() {
-    Serial serial_port;
+    serial serial_port;
     serial_port.set_port("/dev/ttyUSB0");
     serial_port.set_baudrate(115200);
-    serial_port.set_data_bits(data_bits::EIGHT);
-    serial_port.set_parity(parity::NONE);
-    serial_port.set_stop_bits(stop_bits::ONE);
-    serial_port.set_flow_ctrl(flow_ctrl::NONE);
-    serial_port.set_timeout(Timeout::simple_timeout(250)); // 250 ms read/write timeout
+    serial_port.set_data_bits(data_bits::eight);
+    serial_port.set_parity(parity::none);
+    serial_port.set_stop_bits(stop_bits::one);
+    serial_port.set_flow_ctrl(flow_ctrl::none);
+    serial_port.set_timeout(timeout::simple_timeout(250)); // 250 ms read/write timeout
 
     try {
         serial_port.open();

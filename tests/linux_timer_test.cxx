@@ -1,7 +1,7 @@
 ///
 /// @file linux_timer_test.cxx
 /// @author BA7LYA (1042140025@qq.com)
-/// @brief Tests the monotonic MillisecondTimer helper of the POSIX backend (Linux only).
+/// @brief Tests the monotonic millisecond_timer helper of the POSIX backend (Linux only).
 /// @version 0.2
 /// @date 2026-09-14
 /// @copyright Copyright (c) 2026
@@ -17,7 +17,7 @@
 
 #include "linux/linux.hxx"
 
-using ba7lya::serial::MillisecondTimer;
+using ba7lya::serial::millisecond_timer;
 using namespace std::chrono_literals;
 
 namespace {
@@ -26,10 +26,10 @@ namespace {
 /// @brief Short countdowns expire within a millisecond of their nominal duration.
 /// @note Do 100 trials of timing gaps between 0 and 19 milliseconds.
 ///
-TEST(TimerTest, short_intervals) {
+TEST(timer_test, short_intervals) {
     for (uint32_t trial = 0; trial < 100; ++trial) {
         const uint32_t ms = trial % 20;
-        const MillisecondTimer timer(ms);
+        const millisecond_timer timer(ms);
         std::this_thread::sleep_for(std::chrono::milliseconds(ms) + 1ms);
         const int64_t remaining = timer.remaining();
         EXPECT_LE(remaining, 0) << "timer should have expired";
@@ -40,12 +40,12 @@ TEST(TimerTest, short_intervals) {
 ///
 /// @brief Ten overlapping one-second countdowns stay in the expected relative order.
 ///
-TEST(TimerTest, overlapping_long_intervals) {
-    std::array<std::unique_ptr<MillisecondTimer>, 10> timers;
+TEST(timer_test, overlapping_long_intervals) {
+    std::array<std::unique_ptr<millisecond_timer>, 10> timers;
 
     // Start each timer 1 ms after the previous one.
     for (auto& timer : timers) {
-        timer = std::make_unique<MillisecondTimer>(1000);
+        timer = std::make_unique<millisecond_timer>(1000);
         std::this_thread::sleep_for(1ms);
     }
 

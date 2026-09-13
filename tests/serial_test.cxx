@@ -1,7 +1,7 @@
 ///
 /// @file serial_test.cxx
 /// @author BA7LYA (1042140025@qq.com)
-/// @brief Portable unit tests for the Serial facade: parameter handling, errors and listing.
+/// @brief Portable unit tests for the serial facade: parameter handling, errors and listing.
 /// @version 0.2
 /// @date 2026-09-14
 /// @copyright Copyright (c) 2026
@@ -16,30 +16,30 @@ using namespace ba7lya::serial;
 ///
 /// @brief Exercises construction without opening a port.
 ///
-TEST(SerialTest, constructs_closed) {
-    Serial serial;
+TEST(serial_test, constructs_closed) {
+    serial serial;
     EXPECT_FALSE(serial.is_open());
     EXPECT_EQ(serial.get_port(), "");
     EXPECT_EQ(serial.get_baudrate(), 9600u);
-    EXPECT_EQ(serial.get_data_bits(), data_bits::EIGHT);
-    EXPECT_EQ(serial.get_parity(), parity::NONE);
-    EXPECT_EQ(serial.get_stop_bits(), stop_bits::ONE);
-    EXPECT_EQ(serial.get_flow_ctrl(), flow_ctrl::NONE);
+    EXPECT_EQ(serial.get_data_bits(), data_bits::eight);
+    EXPECT_EQ(serial.get_parity(), parity::none);
+    EXPECT_EQ(serial.get_stop_bits(), stop_bits::one);
+    EXPECT_EQ(serial.get_flow_ctrl(), flow_ctrl::none);
 }
 
 ///
 /// @brief An empty port name makes open() fail with invalid_argument.
 ///
-TEST(SerialTest, open_without_port_throws) {
-    Serial serial;
+TEST(serial_test, open_without_port_throws) {
+    serial serial;
     EXPECT_THROW(serial.open(), std::invalid_argument);
 }
 
 ///
 /// @brief Operations on a closed port throw port_not_open_exception.
 ///
-TEST(SerialTest, operations_on_closed_port_throw) {
-    Serial serial;
+TEST(serial_test, operations_on_closed_port_throw) {
+    serial serial;
     EXPECT_THROW(serial.read(1), port_not_open_exception);
     EXPECT_THROW(serial.write(std::string("x")), port_not_open_exception);
     EXPECT_THROW(serial.flush(), port_not_open_exception);
@@ -49,10 +49,10 @@ TEST(SerialTest, operations_on_closed_port_throw) {
 
 /// @brief Opening a port that is already open is rejected.
 ///
-TEST(SerialTest, double_open_throws) {
+TEST(serial_test, double_open_throws) {
     // Use the first real port we can open; skip when the machine has none.
     for (const auto& info : list_ports()) {
-        Serial serial;
+        serial serial;
         serial.set_port(info.name);
         try {
             serial.open();
@@ -70,8 +70,8 @@ TEST(SerialTest, double_open_throws) {
 ///
 /// @brief Setting a nonexistent port fails cleanly and leaves the object closed.
 ///
-TEST(SerialTest, open_missing_port_throws) {
-    Serial serial;
+TEST(serial_test, open_missing_port_throws) {
+    serial serial;
     serial.set_port("definitely-not-a-serial-port");
     EXPECT_THROW(serial.open(), io_exception);
     EXPECT_FALSE(serial.is_open());
@@ -80,29 +80,29 @@ TEST(SerialTest, open_missing_port_throws) {
 ///
 /// @brief Configuration setters round-trip through the getters.
 ///
-TEST(SerialTest, settings_roundtrip) {
-    Serial serial;
+TEST(serial_test, settings_roundtrip) {
+    serial serial;
     serial.set_baudrate(115200);
-    serial.set_data_bits(data_bits::SEVEN);
-    serial.set_parity(parity::EVEN);
-    serial.set_stop_bits(stop_bits::TWO);
-    serial.set_flow_ctrl(flow_ctrl::HARDWARE);
-    serial.set_timeout(Timeout::simple_timeout(500));
+    serial.set_data_bits(data_bits::seven);
+    serial.set_parity(parity::even);
+    serial.set_stop_bits(stop_bits::two);
+    serial.set_flow_ctrl(flow_ctrl::hardware);
+    serial.set_timeout(timeout::simple_timeout(500));
 
     EXPECT_EQ(serial.get_baudrate(), 115200u);
-    EXPECT_EQ(serial.get_data_bits(), data_bits::SEVEN);
-    EXPECT_EQ(serial.get_parity(), parity::EVEN);
-    EXPECT_EQ(serial.get_stop_bits(), stop_bits::TWO);
-    EXPECT_EQ(serial.get_flow_ctrl(), flow_ctrl::HARDWARE);
+    EXPECT_EQ(serial.get_data_bits(), data_bits::seven);
+    EXPECT_EQ(serial.get_parity(), parity::even);
+    EXPECT_EQ(serial.get_stop_bits(), stop_bits::two);
+    EXPECT_EQ(serial.get_flow_ctrl(), flow_ctrl::hardware);
     EXPECT_EQ(serial.get_timeout().read_timeout_constant, 500u);
 }
 
 ///
-/// @brief Timeout helpers produce the documented field layout.
+/// @brief timeout helpers produce the documented field layout.
 ///
-TEST(TimeoutTest, simple_timeout_fields) {
-    const Timeout t = Timeout::simple_timeout(250);
-    EXPECT_EQ(t.inter_byte_timeout, Timeout::max());
+TEST(timeout_test, simple_timeout_fields) {
+    const timeout t = timeout::simple_timeout(250);
+    EXPECT_EQ(t.inter_byte_timeout, timeout::max());
     EXPECT_EQ(t.read_timeout_constant, 250u);
     EXPECT_EQ(t.read_timeout_multiplier, 0u);
     EXPECT_EQ(t.write_timeout_constant, 250u);
@@ -112,16 +112,16 @@ TEST(TimeoutTest, simple_timeout_fields) {
 ///
 /// @brief stop_bits_count maps the enum to frame time units.
 ///
-TEST(StopBitsTest, counts) {
-    EXPECT_DOUBLE_EQ(stop_bits_count(stop_bits::ONE), 1.0);
-    EXPECT_DOUBLE_EQ(stop_bits_count(stop_bits::ONE_POINT_FIVE), 1.5);
-    EXPECT_DOUBLE_EQ(stop_bits_count(stop_bits::TWO), 2.0);
+TEST(stop_bits_test, counts) {
+    EXPECT_DOUBLE_EQ(stop_bits_count(stop_bits::one), 1.0);
+    EXPECT_DOUBLE_EQ(stop_bits_count(stop_bits::one_point_five), 1.5);
+    EXPECT_DOUBLE_EQ(stop_bits_count(stop_bits::two), 2.0);
 }
 
 ///
 /// @brief list_ports returns well-formed entries or none; it must never throw.
 ///
-TEST(ListPortsTest, never_throws) {
+TEST(list_ports_test, never_throws) {
     const auto ports = list_ports();
     for (const auto& port : ports) { EXPECT_FALSE(port.name.empty()); }
 }

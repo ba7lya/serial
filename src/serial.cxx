@@ -1,7 +1,7 @@
 ///
 /// @file serial.cxx
 /// @author BA7LYA (1042140025@qq.com)
-/// @brief Platform-independent facade for the Serial class, forwarding to the per-platform impl.
+/// @brief Platform-independent facade for the serial class, forwarding to the per-platform impl.
 /// @version 0.2
 /// @date 2026-09-14
 /// @copyright Copyright (c) 2026
@@ -24,10 +24,10 @@ namespace ba7lya::serial {
 ///
 /// @brief Constructs the object and its platform implementation, opening the port when given.
 ///
-Serial::Serial(
+serial::serial(
     std::string port,
     std::uint32_t baudrate,
-    Timeout timeout,
+    timeout value,
     data_bits bytesize,
     parity parity,
     stop_bits stopbits,
@@ -36,15 +36,15 @@ Serial::Serial(
     : pimpl_(
         std::make_unique<impl>(port, baudrate, bytesize, parity, stopbits, flowcontrol)
     ) {
-    pimpl_->set_timeout(timeout);
+    pimpl_->set_timeout(value);
 }
 
-Serial::~Serial() = default;
+serial::~serial() = default;
 
 ///
 /// @brief Opens the serial port through the platform implementation.
 ///
-void Serial::open() {
+void serial::open() {
     std::lock_guard _(mutex_);
     pimpl_->open();
 }
@@ -52,7 +52,7 @@ void Serial::open() {
 ///
 /// @brief Closes the serial port; safe to call when already closed.
 ///
-void Serial::close() {
+void serial::close() {
     std::lock_guard _(mutex_);
     pimpl_->close();
 }
@@ -60,7 +60,7 @@ void Serial::close() {
 ///
 /// @brief Reports whether the port is currently open.
 ///
-bool Serial::is_open() const {
+bool serial::is_open() const {
     std::lock_guard _(mutex_);
     return pimpl_->is_open();
 }
@@ -68,7 +68,7 @@ bool Serial::is_open() const {
 ///
 /// @brief Returns the number of bytes immediately readable from the input buffer.
 ///
-size_t Serial::available() {
+size_t serial::available() {
     std::lock_guard _(mutex_);
     return pimpl_->available();
 }
@@ -76,7 +76,7 @@ size_t Serial::available() {
 ///
 /// @brief Blocks until data is readable or the read timeout constant elapses.
 ///
-bool Serial::wait_readable() {
+bool serial::wait_readable() {
     std::lock_guard _(mutex_);
     return pimpl_->wait_readable(pimpl_->get_timeout().read_timeout_constant);
 }
@@ -84,7 +84,7 @@ bool Serial::wait_readable() {
 ///
 /// @brief Sleeps for the transmission time of count characters.
 ///
-void Serial::wait_byte_times(size_t count) {
+void serial::wait_byte_times(size_t count) {
     std::lock_guard _(mutex_);
     pimpl_->wait_byte_times(count);
 }
@@ -92,7 +92,7 @@ void Serial::wait_byte_times(size_t count) {
 ///
 /// @brief Reads raw bytes into the span, honouring the read timeout.
 ///
-size_t Serial::read(std::span<std::uint8_t> buffer) {
+size_t serial::read(std::span<std::uint8_t> buffer) {
     std::lock_guard _(mutex_);
     return pimpl_->read(buffer);
 }
@@ -100,7 +100,7 @@ size_t Serial::read(std::span<std::uint8_t> buffer) {
 ///
 /// @brief Reads bytes and appends them to a vector, resizing it to the data actually read.
 ///
-size_t Serial::read(std::vector<std::uint8_t>& buffer, size_t size) {
+size_t serial::read(std::vector<std::uint8_t>& buffer, size_t size) {
     std::lock_guard _(mutex_);
     const size_t old_size = buffer.size();
     buffer.resize(old_size + size);
@@ -117,7 +117,7 @@ size_t Serial::read(std::vector<std::uint8_t>& buffer, size_t size) {
 ///
 /// @brief Reads bytes and appends them to a string.
 ///
-size_t Serial::read(std::string& buffer, size_t size) {
+size_t serial::read(std::string& buffer, size_t size) {
     std::lock_guard _(mutex_);
     const size_t old_size = buffer.size();
     buffer.resize(old_size + size);
@@ -136,7 +136,7 @@ size_t Serial::read(std::string& buffer, size_t size) {
 /// @brief Reads bytes and returns them as a new string.
 /// @note Delegates to the locking overload; must not lock the mutex itself.
 ///
-std::string Serial::read(size_t size) {
+std::string serial::read(size_t size) {
     std::string buffer;
     read(buffer, size);
     return buffer;
@@ -145,7 +145,7 @@ std::string Serial::read(size_t size) {
 ///
 /// @brief Reads byte-per-byte until the eol sequence, a read timeout or the size limit.
 ///
-size_t Serial::readline(std::string& buffer, size_t size, std::string_view eol) {
+size_t serial::readline(std::string& buffer, size_t size, std::string_view eol) {
     std::lock_guard _(mutex_);
     std::vector<std::uint8_t> tmp(size);
     size_t read_so_far = 0;
@@ -170,7 +170,7 @@ size_t Serial::readline(std::string& buffer, size_t size, std::string_view eol) 
 /// @brief Reads one line and returns it.
 /// @note Delegates to the locking overload; must not lock the mutex itself.
 ///
-std::string Serial::readline(size_t size, std::string_view eol) {
+std::string serial::readline(size_t size, std::string_view eol) {
     std::string buffer;
     readline(buffer, size, eol);
     return buffer;
@@ -179,7 +179,7 @@ std::string Serial::readline(size_t size, std::string_view eol) {
 ///
 /// @brief Reads lines until the read timeout expires or the size limit is reached.
 ///
-std::vector<std::string> Serial::readlines(size_t size, std::string_view eol) {
+std::vector<std::string> serial::readlines(size_t size, std::string_view eol) {
     std::lock_guard _(mutex_);
     std::vector<std::string> lines;
     std::vector<std::uint8_t> tmp(size);
@@ -217,7 +217,7 @@ std::vector<std::string> Serial::readlines(size_t size, std::string_view eol) {
 ///
 /// @brief Writes raw bytes to the port, honouring the write timeout.
 ///
-size_t Serial::write(std::span<const std::uint8_t> data) {
+size_t serial::write(std::span<const std::uint8_t> data) {
     std::lock_guard _(mutex_);
     return pimpl_->write(data);
 }
@@ -226,7 +226,7 @@ size_t Serial::write(std::span<const std::uint8_t> data) {
 /// @brief Writes a vector's bytes to the port.
 /// @note Delegates to the locking overload; must not lock the mutex itself.
 ///
-size_t Serial::write(const std::vector<std::uint8_t>& data) {
+size_t serial::write(const std::vector<std::uint8_t>& data) {
     return write(std::span(data.data(), data.size()));
 }
 
@@ -234,7 +234,7 @@ size_t Serial::write(const std::vector<std::uint8_t>& data) {
 /// @brief Writes a string's bytes to the port.
 /// @note Delegates to the locking overload; must not lock the mutex itself.
 ///
-size_t Serial::write(const std::string& data) {
+size_t serial::write(const std::string& data) {
     return write(std::span(
         reinterpret_cast<const std::uint8_t*>(data.data()),
         data.size()
@@ -244,7 +244,7 @@ size_t Serial::write(const std::string& data) {
 ///
 /// @brief Changes the port address, keeping the port open when it was open before.
 ///
-void Serial::set_port(const std::string& port) {
+void serial::set_port(const std::string& port) {
     std::lock_guard _(mutex_);
     const bool was_open = pimpl_->is_open();
     pimpl_->close();
@@ -255,7 +255,7 @@ void Serial::set_port(const std::string& port) {
 ///
 /// @brief Returns the configured port address.
 ///
-std::string Serial::get_port() const {
+std::string serial::get_port() const {
     std::lock_guard _(mutex_);
     return pimpl_->get_port();
 }
@@ -263,15 +263,15 @@ std::string Serial::get_port() const {
 ///
 /// @brief Sets the read and write timeouts.
 ///
-void Serial::set_timeout(const Timeout& timeout) {
+void serial::set_timeout(const timeout& value) {
     std::lock_guard _(mutex_);
-    pimpl_->set_timeout(timeout);
+    pimpl_->set_timeout(value);
 }
 
 ///
 /// @brief Returns the current timeout conditions.
 ///
-Timeout Serial::get_timeout() const {
+timeout serial::get_timeout() const {
     std::lock_guard _(mutex_);
     return pimpl_->get_timeout();
 }
@@ -279,7 +279,7 @@ Timeout Serial::get_timeout() const {
 ///
 /// @brief Sets the baud rate, applying it to the hardware when the port is open.
 ///
-void Serial::set_baudrate(std::uint32_t baudrate) {
+void serial::set_baudrate(std::uint32_t baudrate) {
     std::lock_guard _(mutex_);
     pimpl_->set_baudrate(baudrate);
 }
@@ -287,7 +287,7 @@ void Serial::set_baudrate(std::uint32_t baudrate) {
 ///
 /// @brief Returns the current baud rate.
 ///
-std::uint32_t Serial::get_baudrate() const {
+std::uint32_t serial::get_baudrate() const {
     std::lock_guard _(mutex_);
     return pimpl_->get_baudrate();
 }
@@ -295,7 +295,7 @@ std::uint32_t Serial::get_baudrate() const {
 ///
 /// @brief Sets the data bit count, applying it to the hardware when the port is open.
 ///
-void Serial::set_data_bits(data_bits bytesize) {
+void serial::set_data_bits(data_bits bytesize) {
     std::lock_guard _(mutex_);
     pimpl_->set_data_bits(bytesize);
 }
@@ -303,7 +303,7 @@ void Serial::set_data_bits(data_bits bytesize) {
 ///
 /// @brief Returns the current data bit count.
 ///
-data_bits Serial::get_data_bits() const {
+data_bits serial::get_data_bits() const {
     std::lock_guard _(mutex_);
     return pimpl_->get_data_bits();
 }
@@ -311,7 +311,7 @@ data_bits Serial::get_data_bits() const {
 ///
 /// @brief Sets the parity method, applying it to the hardware when the port is open.
 ///
-void Serial::set_parity(parity parity) {
+void serial::set_parity(parity parity) {
     std::lock_guard _(mutex_);
     pimpl_->set_parity(parity);
 }
@@ -319,7 +319,7 @@ void Serial::set_parity(parity parity) {
 ///
 /// @brief Returns the current parity method.
 ///
-parity Serial::get_parity() const {
+parity serial::get_parity() const {
     std::lock_guard _(mutex_);
     return pimpl_->get_parity();
 }
@@ -327,7 +327,7 @@ parity Serial::get_parity() const {
 ///
 /// @brief Sets the stop bits, applying them to the hardware when the port is open.
 ///
-void Serial::set_stop_bits(stop_bits stopbits) {
+void serial::set_stop_bits(stop_bits stopbits) {
     std::lock_guard _(mutex_);
     pimpl_->set_stop_bits(stopbits);
 }
@@ -335,7 +335,7 @@ void Serial::set_stop_bits(stop_bits stopbits) {
 ///
 /// @brief Returns the current stop bit setting.
 ///
-stop_bits Serial::get_stop_bits() const {
+stop_bits serial::get_stop_bits() const {
     std::lock_guard _(mutex_);
     return pimpl_->get_stop_bits();
 }
@@ -343,7 +343,7 @@ stop_bits Serial::get_stop_bits() const {
 ///
 /// @brief Sets the flow control method, applying it when the port is open.
 ///
-void Serial::set_flow_ctrl(flow_ctrl flowcontrol) {
+void serial::set_flow_ctrl(flow_ctrl flowcontrol) {
     std::lock_guard _(mutex_);
     pimpl_->set_flow_ctrl(flowcontrol);
 }
@@ -351,7 +351,7 @@ void Serial::set_flow_ctrl(flow_ctrl flowcontrol) {
 ///
 /// @brief Returns the current flow control method.
 ///
-flow_ctrl Serial::get_flow_ctrl() const {
+flow_ctrl serial::get_flow_ctrl() const {
     std::lock_guard _(mutex_);
     return pimpl_->get_flow_ctrl();
 }
@@ -359,7 +359,7 @@ flow_ctrl Serial::get_flow_ctrl() const {
 ///
 /// @brief Waits until both transmit and receive buffers are empty.
 ///
-void Serial::flush() {
+void serial::flush() {
     std::lock_guard _(mutex_);
     pimpl_->flush();
 }
@@ -367,7 +367,7 @@ void Serial::flush() {
 ///
 /// @brief Discards received but unread data.
 ///
-void Serial::flush_rx_buffer() {
+void serial::flush_rx_buffer() {
     std::lock_guard _(mutex_);
     pimpl_->flush_rx_buffer();
 }
@@ -375,7 +375,7 @@ void Serial::flush_rx_buffer() {
 ///
 /// @brief Discards data queued for transmission but not yet sent.
 ///
-void Serial::flush_tx_buffer() {
+void serial::flush_tx_buffer() {
     std::lock_guard _(mutex_);
     pimpl_->flush_tx_buffer();
 }
@@ -383,7 +383,7 @@ void Serial::flush_tx_buffer() {
 ///
 /// @brief Sends an RS-232 break signal for duration milliseconds.
 ///
-void Serial::send_break(int duration) {
+void serial::send_break(int duration) {
     std::lock_guard _(mutex_);
     pimpl_->send_break(duration);
 }
@@ -391,7 +391,7 @@ void Serial::send_break(int duration) {
 ///
 /// @brief Drives the break condition to the given level.
 ///
-void Serial::set_break(bool level) {
+void serial::set_break(bool level) {
     std::lock_guard _(mutex_);
     pimpl_->set_break(level);
 }
@@ -399,7 +399,7 @@ void Serial::set_break(bool level) {
 ///
 /// @brief Drives the RTS line to the given level.
 ///
-void Serial::set_rts(bool level) {
+void serial::set_rts(bool level) {
     std::lock_guard _(mutex_);
     pimpl_->set_rts(level);
 }
@@ -407,7 +407,7 @@ void Serial::set_rts(bool level) {
 ///
 /// @brief Drives the DTR line to the given level.
 ///
-void Serial::set_dtr(bool level) {
+void serial::set_dtr(bool level) {
     std::lock_guard _(mutex_);
     pimpl_->set_dtr(level);
 }
@@ -415,7 +415,7 @@ void Serial::set_dtr(bool level) {
 ///
 /// @brief Blocks until one of the CTS, DSR, RI, CD modem lines changes state.
 ///
-bool Serial::wait_for_change() {
+bool serial::wait_for_change() {
     std::lock_guard _(mutex_);
     return pimpl_->wait_for_change();
 }
@@ -423,7 +423,7 @@ bool Serial::wait_for_change() {
 ///
 /// @brief Returns the current state of the CTS modem line.
 ///
-bool Serial::get_cts() {
+bool serial::get_cts() {
     std::lock_guard _(mutex_);
     return pimpl_->get_cts();
 }
@@ -431,7 +431,7 @@ bool Serial::get_cts() {
 ///
 /// @brief Returns the current state of the DSR modem line.
 ///
-bool Serial::get_dsr() {
+bool serial::get_dsr() {
     std::lock_guard _(mutex_);
     return pimpl_->get_dsr();
 }
@@ -439,7 +439,7 @@ bool Serial::get_dsr() {
 ///
 /// @brief Returns the current state of the RI modem line.
 ///
-bool Serial::get_ri() {
+bool serial::get_ri() {
     std::lock_guard _(mutex_);
     return pimpl_->get_ri();
 }
@@ -447,7 +447,7 @@ bool Serial::get_ri() {
 ///
 /// @brief Returns the current state of the CD modem line.
 ///
-bool Serial::get_cd() {
+bool serial::get_cd() {
     std::lock_guard _(mutex_);
     return pimpl_->get_cd();
 }

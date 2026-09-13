@@ -19,7 +19,7 @@ int main() {
     using namespace ba7lya::serial;
 
     // The VK-162 speaks NMEA at 9600 baud, 8N1.
-    Serial serial("COM8", 9600);
+    serial serial("COM8", 9600);
     if (!serial.is_open()) {
         std::cerr << "Failed to open the GPS port." << std::endl;
         return -1;

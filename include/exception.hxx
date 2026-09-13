@@ -63,7 +63,7 @@ class port_not_open_exception : public serial_exception {
 public:
     ///
     /// @brief Constructs the exception naming the operation that needs an open port.
-    /// @param operation Name of the failing operation, e.g. "Serial::read".
+    /// @param operation Name of the failing operation, e.g. "serial::read".
     ///
     explicit port_not_open_exception(const std::string& operation)
         : serial_exception(operation + ": port is not open") {}

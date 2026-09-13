@@ -1,7 +1,7 @@
 ///
 /// @file linux.cxx
 /// @author BA7LYA (1042140025@qq.com)
-/// @brief Linux implementation of the Serial class, based on termios and pselect.
+/// @brief Linux implementation of the serial class, based on termios and pselect.
 /// @version 0.2
 /// @date 2026-09-14
 /// @copyright Copyright (c) 2026
@@ -76,7 +76,7 @@ bool standard_speed(std::uint32_t baudrate, speed_t& out) {
 ///
 /// @brief Stores the configuration and opens the port when a path was given.
 ///
-Serial::impl::impl(
+serial::impl::impl(
     const std::string& port,
     std::uint32_t baudrate,
     data_bits bytesize,
@@ -97,7 +97,7 @@ Serial::impl::impl(
 ///
 /// @brief Releases the file descriptor.
 ///
-Serial::impl::~impl() {
+serial::impl::~impl() {
     try {
         close();
     } catch (...) {
@@ -107,14 +107,14 @@ Serial::impl::~impl() {
 ///
 /// @brief Throws unless the port is open.
 ///
-void Serial::impl::require_open(std::string_view operation) const {
+void serial::impl::require_open(std::string_view operation) const {
     if (!is_open_) { throw port_not_open_exception(std::string(operation)); }
 }
 
 ///
 /// @brief Throws an io_exception describing the current errno.
 ///
-void Serial::impl::throw_errno(std::string_view context) {
+void serial::impl::throw_errno(std::string_view context) {
     throw io_exception(
         std::error_code(errno, std::system_category()),
         std::string(context) + ": " + std::strerror(errno)
@@ -124,9 +124,9 @@ void Serial::impl::throw_errno(std::string_view context) {
 ///
 /// @brief Opens the device read/write and non-blocking, then applies the configuration.
 ///
-void Serial::impl::open() {
+void serial::impl::open() {
     if (port_.empty()) { throw std::invalid_argument("Empty port is invalid."); }
-    if (is_open_) { throw serial_exception("Serial port already open."); }
+    if (is_open_) { throw serial_exception("serial port already open."); }
 
     fd_ = ::open(port_.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
     if (fd_ == -1) {
@@ -153,7 +153,7 @@ void Serial::impl::open() {
 ///
 /// @brief Writes all stored framing settings into the termios structure.
 ///
-void Serial::impl::reconfigure() {
+void serial::impl::reconfigure() {
     if (fd_ == -1) {
         throw io_exception("Invalid file descriptor, is the serial port open?");
     }
@@ -176,38 +176,38 @@ void Serial::impl::reconfigure() {
     // Data bits
     options.c_cflag &= static_cast<tcflag_t>(~CSIZE);
     switch (bytesize_) {
-    case data_bits::FIVE: options.c_cflag |= CS5; break;
-    case data_bits::SIX: options.c_cflag |= CS6; break;
-    case data_bits::SEVEN: options.c_cflag |= CS7; break;
-    case data_bits::EIGHT: options.c_cflag |= CS8; break;
+    case data_bits::five: options.c_cflag |= CS5; break;
+    case data_bits::six: options.c_cflag |= CS6; break;
+    case data_bits::seven: options.c_cflag |= CS7; break;
+    case data_bits::eight: options.c_cflag |= CS8; break;
     }
 
     // Stop bits — the kernel has no 1.5, so it is handled as two.
-    if (stopbits_ == stop_bits::ONE) { options.c_cflag &= static_cast<tcflag_t>(~CSTOPB); }
+    if (stopbits_ == stop_bits::one) { options.c_cflag &= static_cast<tcflag_t>(~CSTOPB); }
     else { options.c_cflag |= CSTOPB; }
 
     // Parity (Linux supports mark and space through CMSPAR)
     options.c_iflag &= static_cast<tcflag_t>(~(INPCK | ISTRIP));
     switch (parity_) {
-    case parity::NONE:
+    case parity::none:
         options.c_cflag &= static_cast<tcflag_t>(~(PARENB | PARODD | CMSPAR));
         break;
-    case parity::EVEN:
+    case parity::even:
         options.c_cflag = static_cast<tcflag_t>((options.c_cflag & ~(PARODD | CMSPAR)) | PARENB);
         break;
-    case parity::ODD:
+    case parity::odd:
         options.c_cflag = static_cast<tcflag_t>((options.c_cflag & ~CMSPAR) | (PARENB | PARODD));
         break;
-    case parity::MARK: options.c_cflag |= (PARENB | CMSPAR | PARODD); break;
-    case parity::SPACE:
+    case parity::mark: options.c_cflag |= (PARENB | CMSPAR | PARODD); break;
+    case parity::space:
         options.c_cflag = static_cast<tcflag_t>((options.c_cflag | (PARENB | CMSPAR)) & ~PARODD);
         break;
     }
 
     // Flow control: XON/XOFF in the iflag bits, RTS/CTS in the cflag bits.
-    if (flowcontrol_ == flow_ctrl::SOFTWARE) { options.c_iflag |= (IXON | IXOFF); }
+    if (flowcontrol_ == flow_ctrl::software) { options.c_iflag |= (IXON | IXOFF); }
     else { options.c_iflag &= static_cast<tcflag_t>(~(IXON | IXOFF | IXANY)); }
-    if (flowcontrol_ == flow_ctrl::HARDWARE) { options.c_cflag |= CRTSCTS; }
+    if (flowcontrol_ == flow_ctrl::hardware) { options.c_cflag |= CRTSCTS; }
     else { options.c_cflag &= static_cast<tcflag_t>(~CRTSCTS); }
 
     // VMIN/VTIME unused: pselect guarantees data before each read.
@@ -231,7 +231,7 @@ void Serial::impl::reconfigure() {
 ///
 /// @brief Recomputes the transmission time of one byte from the current framing.
 ///
-void Serial::impl::update_byte_time() {
+void serial::impl::update_byte_time() {
     if (baudrate_ == 0) {
         byte_time_ns_ = 0;
         return;
@@ -241,14 +241,14 @@ void Serial::impl::update_byte_time() {
     byte_time_ns_ = static_cast<std::uint32_t>(
         bit_time_ns
         * (1.0 + static_cast<int>(bytesize_)
-           + static_cast<int>(parity_ != parity::NONE ? 1 : 0) + stop_bits_count(stopbits_))
+           + static_cast<int>(parity_ != parity::none ? 1 : 0) + stop_bits_count(stopbits_))
     );
 }
 
 ///
 /// @brief Closes the descriptor if the port is open.
 ///
-void Serial::impl::close() {
+void serial::impl::close() {
     if (!is_open_) { return; }
     if (fd_ != -1 && ::close(fd_) != 0) {
         fd_ = -1;
@@ -262,12 +262,12 @@ void Serial::impl::close() {
 ///
 /// @brief Reports whether the port is open.
 ///
-bool Serial::impl::is_open() const { return is_open_; }
+bool serial::impl::is_open() const { return is_open_; }
 
 ///
 /// @brief Asks the kernel how many bytes are queued for reading.
 ///
-size_t Serial::impl::available() {
+size_t serial::impl::available() {
     if (!is_open_) { return 0; }
     int count = 0;
     if (::ioctl(fd_, TIOCINQ, &count) == -1) { throw_errno("ioctl(TIOCINQ)"); }
@@ -277,7 +277,7 @@ size_t Serial::impl::available() {
 ///
 /// @brief Blocks in pselect until the descriptor is readable or the timeout expires.
 ///
-bool Serial::impl::wait_readable(std::uint32_t timeout) {
+bool serial::impl::wait_readable(std::uint32_t timeout) {
     fd_set readfds;
     FD_ZERO(&readfds);
     FD_SET(fd_, &readfds);
@@ -295,7 +295,7 @@ bool Serial::impl::wait_readable(std::uint32_t timeout) {
 ///
 /// @brief Sleeps for the time needed to transmit count bytes at the current settings.
 ///
-void Serial::impl::wait_byte_times(size_t count) {
+void serial::impl::wait_byte_times(size_t count) {
     std::this_thread::sleep_for(std::chrono::nanoseconds(
         static_cast<std::uint64_t>(byte_time_ns_) * count
     ));
@@ -304,14 +304,14 @@ void Serial::impl::wait_byte_times(size_t count) {
 ///
 /// @brief Reads until the buffer is full or the total / inter-byte timeouts expire.
 ///
-size_t Serial::impl::read(std::span<std::uint8_t> buf) {
-    require_open("Serial::read");
+size_t serial::impl::read(std::span<std::uint8_t> buf) {
+    require_open("serial::read");
 
     // Total budget: constant + multiplier * requested bytes.
     const std::int64_t total_ms = static_cast<std::int64_t>(timeout_.read_timeout_constant)
         + static_cast<std::int64_t>(timeout_.read_timeout_multiplier)
               * static_cast<std::int64_t>(buf.size());
-    const MillisecondTimer total_timeout(static_cast<std::uint32_t>(
+    const millisecond_timer total_timeout(static_cast<std::uint32_t>(
         std::max<std::int64_t>(total_ms, 0)
     ));
 
@@ -341,13 +341,13 @@ size_t Serial::impl::read(std::span<std::uint8_t> buf) {
 ///
 /// @brief Writes until all bytes are sent or the write timeout expires.
 ///
-size_t Serial::impl::write(std::span<const std::uint8_t> data) {
-    require_open("Serial::write");
+size_t serial::impl::write(std::span<const std::uint8_t> data) {
+    require_open("serial::write");
 
     const std::int64_t total_ms = static_cast<std::int64_t>(timeout_.write_timeout_constant)
         + static_cast<std::int64_t>(timeout_.write_timeout_multiplier)
               * static_cast<std::int64_t>(data.size());
-    const MillisecondTimer total_timeout(static_cast<std::uint32_t>(
+    const millisecond_timer total_timeout(static_cast<std::uint32_t>(
         std::max<std::int64_t>(total_ms, 0)
     ));
 
@@ -363,7 +363,7 @@ size_t Serial::impl::write(std::span<const std::uint8_t> data) {
             if (errno == EINTR) { continue; }
             throw_errno("pselect");
         }
-        if (r == 0) { break; } // Timeout
+        if (r == 0) { break; } // timeout
 
         const ssize_t n = ::write(fd_, data.data() + bytes_written, data.size() - bytes_written);
         if (n < 0) {
@@ -378,48 +378,48 @@ size_t Serial::impl::write(std::span<const std::uint8_t> data) {
 ///
 /// @brief Waits for the kernel output queue to drain.
 ///
-void Serial::impl::flush() {
-    require_open("Serial::flush");
+void serial::impl::flush() {
+    require_open("serial::flush");
     ::tcdrain(fd_);
 }
 
 ///
 /// @brief Discards unread input.
 ///
-void Serial::impl::flush_rx_buffer() {
-    require_open("Serial::flush_rx_buffer");
+void serial::impl::flush_rx_buffer() {
+    require_open("serial::flush_rx_buffer");
     ::tcflush(fd_, TCIFLUSH);
 }
 
 ///
 /// @brief Discards queued output.
 ///
-void Serial::impl::flush_tx_buffer() {
-    require_open("Serial::flush_tx_buffer");
+void serial::impl::flush_tx_buffer() {
+    require_open("serial::flush_tx_buffer");
     ::tcflush(fd_, TCOFLUSH);
 }
 
 ///
 /// @brief Sends a break signal; duration is converted to tcsendbreak's scale (0.25 s units).
 ///
-void Serial::impl::send_break(int duration) {
-    require_open("Serial::send_break");
+void serial::impl::send_break(int duration) {
+    require_open("serial::send_break");
     ::tcsendbreak(fd_, static_cast<int>(duration / 4));
 }
 
 ///
 /// @brief Drives the break condition.
 ///
-void Serial::impl::set_break(bool level) {
-    require_open("Serial::set_break");
+void serial::impl::set_break(bool level) {
+    require_open("serial::set_break");
     if (::ioctl(fd_, level ? TIOCSBRK : TIOCCBRK) == -1) { throw_errno("set_break"); }
 }
 
 ///
 /// @brief Drives the RTS line.
 ///
-void Serial::impl::set_rts(bool level) {
-    require_open("Serial::set_rts");
+void serial::impl::set_rts(bool level) {
+    require_open("serial::set_rts");
     int command = TIOCM_RTS;
     if (::ioctl(fd_, level ? TIOCMBIS : TIOCMBIC, &command) == -1) { throw_errno("set_rts"); }
 }
@@ -427,8 +427,8 @@ void Serial::impl::set_rts(bool level) {
 ///
 /// @brief Drives the DTR line.
 ///
-void Serial::impl::set_dtr(bool level) {
-    require_open("Serial::set_dtr");
+void serial::impl::set_dtr(bool level) {
+    require_open("serial::set_dtr");
     int command = TIOCM_DTR;
     if (::ioctl(fd_, level ? TIOCMBIS : TIOCMBIC, &command) == -1) { throw_errno("set_dtr"); }
 }
@@ -436,7 +436,7 @@ void Serial::impl::set_dtr(bool level) {
 ///
 /// @brief Reads a modem status bit through TIOCMGET.
 ///
-bool Serial::impl::modem_line(int mask) {
+bool serial::impl::modem_line(int mask) {
     int status = 0;
     if (::ioctl(fd_, TIOCMGET, &status) == -1) { throw_errno("ioctl(TIOCMGET)"); }
     return (status & mask) != 0;
@@ -445,96 +445,96 @@ bool Serial::impl::modem_line(int mask) {
 ///
 /// @brief Blocks on the kernel's TIOCMIWAIT until a modem line changes state.
 ///
-bool Serial::impl::wait_for_change() {
-    require_open("Serial::wait_for_change");
+bool serial::impl::wait_for_change() {
+    require_open("serial::wait_for_change");
     int command = TIOCM_CTS | TIOCM_DSR | TIOCM_RI | TIOCM_CD;
     if (::ioctl(fd_, TIOCMIWAIT, &command) == -1) { throw_errno("ioctl(TIOCMIWAIT)"); }
     return true;
 }
 
 /// @brief Returns the CTS line state.
-bool Serial::impl::get_cts() {
-    require_open("Serial::get_cts");
+bool serial::impl::get_cts() {
+    require_open("serial::get_cts");
     return modem_line(TIOCM_CTS);
 }
 
 /// @brief Returns the DSR line state.
-bool Serial::impl::get_dsr() {
-    require_open("Serial::get_dsr");
+bool serial::impl::get_dsr() {
+    require_open("serial::get_dsr");
     return modem_line(TIOCM_DSR);
 }
 
 /// @brief Returns the ring indicator line state.
-bool Serial::impl::get_ri() {
-    require_open("Serial::get_ri");
+bool serial::impl::get_ri() {
+    require_open("serial::get_ri");
     return modem_line(TIOCM_RI);
 }
 
 /// @brief Returns the carrier detect line state.
-bool Serial::impl::get_cd() {
-    require_open("Serial::get_cd");
+bool serial::impl::get_cd() {
+    require_open("serial::get_cd");
     return modem_line(TIOCM_CD);
 }
 
 /// @brief Stores the device path.
-void Serial::impl::set_port(const std::string& port) { port_ = port; }
+void serial::impl::set_port(const std::string& port) { port_ = port; }
 
 /// @brief Returns the stored device path.
-std::string Serial::impl::get_port() const { return port_; }
+std::string serial::impl::get_port() const { return port_; }
 
 /// @brief Stores the timeouts; enforced by read/write, so no driver call is needed.
-void Serial::impl::set_timeout(const Timeout& timeout) { timeout_ = timeout; }
+void serial::impl::set_timeout(const timeout& value) { timeout_ = value; }
 
 /// @brief Returns the stored timeouts.
-Timeout Serial::impl::get_timeout() const { return timeout_; }
+timeout serial::impl::get_timeout() const { return timeout_; }
 
 /// @brief Stores the baud rate and applies it when the port is open.
-void Serial::impl::set_baudrate(std::uint32_t baudrate) {
+void serial::impl::set_baudrate(std::uint32_t baudrate) {
     baudrate_ = baudrate;
     if (is_open_) { reconfigure(); }
     else { update_byte_time(); }
 }
 
 /// @brief Returns the stored baud rate.
-std::uint32_t Serial::impl::get_baudrate() const { return baudrate_; }
+std::uint32_t serial::impl::get_baudrate() const { return baudrate_; }
 
 /// @brief Stores the data bits and applies them when the port is open.
-void Serial::impl::set_data_bits(data_bits bytesize) {
+void serial::impl::set_data_bits(data_bits bytesize) {
     bytesize_ = bytesize;
     if (is_open_) { reconfigure(); }
     else { update_byte_time(); }
 }
 
 /// @brief Returns the stored data bits.
-data_bits Serial::impl::get_data_bits() const { return bytesize_; }
+data_bits serial::impl::get_data_bits() const { return bytesize_; }
 
 /// @brief Stores the parity and applies it when the port is open.
-void Serial::impl::set_parity(parity parity) {
+void serial::impl::set_parity(parity parity) {
     parity_ = parity;
     if (is_open_) { reconfigure(); }
     else { update_byte_time(); }
 }
 
 /// @brief Returns the stored parity.
-parity Serial::impl::get_parity() const { return parity_; }
+parity serial::impl::get_parity() const { return parity_; }
 
 /// @brief Stores the stop bits and applies them when the port is open.
-void Serial::impl::set_stop_bits(stop_bits stopbits) {
+void serial::impl::set_stop_bits(stop_bits stopbits) {
     stopbits_ = stopbits;
     if (is_open_) { reconfigure(); }
     else { update_byte_time(); }
 }
 
 /// @brief Returns the stored stop bits.
-stop_bits Serial::impl::get_stop_bits() const { return stopbits_; }
+stop_bits serial::impl::get_stop_bits() const { return stopbits_; }
 
 /// @brief Stores the flow control and applies it when the port is open.
-void Serial::impl::set_flow_ctrl(flow_ctrl flowcontrol) {
+void serial::impl::set_flow_ctrl(flow_ctrl flowcontrol) {
     flowcontrol_ = flowcontrol;
     if (is_open_) { reconfigure(); }
 }
 
 /// @brief Returns the stored flow control.
-flow_ctrl Serial::impl::get_flow_ctrl() const { return flowcontrol_; }
+flow_ctrl serial::impl::get_flow_ctrl() const { return flowcontrol_; }
 
 } // namespace ba7lya::serial

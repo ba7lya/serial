@@ -6,7 +6,7 @@ Cross-platform serial port library written in modern C++.
 
 ## 特性 (Features)
 
-- 单一门面类 `ba7lya::serial::Serial`，pimpl 隔离平台实现
+- 单一门面类 `ba7lya::serial::serial`，pimpl 隔离平台实现
 - 平台后端仅两处：Windows（Win32 comm API）与 Linux（termios + pselect）
 - `std::span` / `std::string_view` 零拷贝读写接口
 - 全接口线程安全（内部互斥）
@@ -22,7 +22,7 @@ Cross-platform serial port library written in modern C++.
 using namespace ba7lya::serial;
 
 int main() {
-    Serial port("COM1", 115200, Timeout::simple_timeout(1000));
+    serial port("COM1", 115200, timeout::simple_timeout(1000));
     if (!port.is_open()) { return 1; }
 
     port.write("Hello, serial!\n");

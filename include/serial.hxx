@@ -32,19 +32,19 @@ namespace ba7lya::serial {
 ///
 /// @brief Byte size of the serial frame.
 ///
-enum class data_bits : std::uint8_t { FIVE = 5, SIX = 6, SEVEN = 7, EIGHT = 8 };
+enum class data_bits : std::uint8_t { five = 5, six = 6, seven = 7, eight = 8 };
 
 ///
 /// @brief Parity checking method of the serial frame.
 ///
-enum class parity : std::uint8_t { NONE = 0, ODD = 1, EVEN = 2, MARK = 3, SPACE = 4 };
+enum class parity : std::uint8_t { none = 0, odd = 1, even = 2, mark = 3, space = 4 };
 
 ///
 /// @brief Number of stop bits of the serial frame.
-/// @note ONE_POINT_FIVE is only supported by some platforms and otherwise
+///  one_point_five is only supported by some platforms and otherwise
 /// handled as two stop bits.
 ///
-enum class stop_bits : std::uint8_t { ONE = 1, TWO = 2, ONE_POINT_FIVE = 3 };
+enum class stop_bits : std::uint8_t { one = 1, two = 2, one_point_five = 3 };
 
 ///
 /// @brief Number of stop-bit time units a stop_bits value represents.
@@ -52,28 +52,28 @@ enum class stop_bits : std::uint8_t { ONE = 1, TWO = 2, ONE_POINT_FIVE = 3 };
 /// @return 1.0, 1.5 or 2.0 stop bits.
 ///
 constexpr double stop_bits_count(stop_bits value) {
-    return value == stop_bits::ONE_POINT_FIVE ? 1.5 : static_cast<double>(value);
+    return value == stop_bits::one_point_five ? 1.5 : static_cast<double>(value);
 }
 
 ///
 /// @brief Flow control method of the serial port.
 ///
-enum class flow_ctrl : std::uint8_t { NONE = 0, SOFTWARE, HARDWARE };
+enum class flow_ctrl : std::uint8_t { none = 0, software, hardware };
 
 ///
-/// @brief Timeout description for read and write operations, all times in milliseconds.
-/// @note Set inter_byte_timeout to Timeout::max() to disable the inter-byte timeout.
+/// @brief timeout description for read and write operations, all times in milliseconds.
+/// @note Set inter_byte_timeout to timeout::max() to disable the inter-byte timeout.
 ///
-struct Timeout {
+struct timeout {
     /// @return The largest representable timeout, used to disable a timeout.
     static constexpr std::uint32_t max() { return UINT32_MAX; }
 
     ///
-    /// @brief Builds a Timeout with a single absolute read/write timeout.
+    /// @brief Builds a timeout with a single absolute read/write timeout.
     /// @param timeout Milliseconds to wait after a call to read or write before timing out.
-    /// @return A Timeout representing this simple timeout.
+    /// @return A timeout representing this simple timeout.
     ///
-    static constexpr Timeout simple_timeout(std::uint32_t timeout) {
+    static constexpr timeout simple_timeout(std::uint32_t timeout) {
         return {max(), timeout, 0, timeout, 0};
     }
 
@@ -97,7 +97,7 @@ struct Timeout {
 /// @brief Describes one serial device enumerated by list_ports().
 ///
 struct serial_port_info {
-    /// @brief Port address, passable to the Serial constructor ("COM1", "/dev/ttyUSB0", ...).
+    /// @brief Port address, passable to the serial constructor ("COM1", "/dev/ttyUSB0", ...).
     std::string name;
 
     /// @brief Human readable description of the device, empty if unavailable.
@@ -117,33 +117,33 @@ std::vector<serial_port_info> list_ports();
 /// @brief Portable serial port interface, implemented per platform through a pimpl.
 /// @note All operations are safe to call from multiple threads; concurrent calls are serialized.
 ///
-class Serial {
+class serial {
 public:
     ///
-    /// @brief Creates a Serial object and opens the port if one is specified.
+    /// @brief Creates a serial object and opens the port if one is specified.
     /// @param port Port address, e.g. 'COM1' on Windows or '/dev/ttyS0' on Linux; empty leaves
     /// the port closed until open() is called.
     /// @param baudrate Transmission speed in bits per second.
-    /// @param timeout Timeout conditions for read and write operations.
-    /// @param bytesize Data bits per frame, default data_bits::EIGHT.
-    /// @param parity Parity method, default parity::NONE.
-    /// @param stopbits Stop bits per frame, default stop_bits::ONE.
-    /// @param flowcontrol Flow control method, default flow_ctrl::NONE.
+    /// @param value Timeout conditions for read and write operations.
+    /// @param bytesize Data bits per frame, default data_bits::eight.
+    /// @param parity Parity method, default parity::none.
+    /// @param stopbits Stop bits per frame, default stop_bits::one.
+    /// @param flowcontrol Flow control method, default flow_ctrl::none.
     ///
-    Serial(
+    serial(
         std::string port = "",
         std::uint32_t baudrate = 9600,
-        Timeout timeout = {},
-        data_bits bytesize = data_bits::EIGHT,
-        parity parity = parity::NONE,
-        stop_bits stopbits = stop_bits::ONE,
-        flow_ctrl flowcontrol = flow_ctrl::NONE
+        timeout value = {},
+        data_bits bytesize = data_bits::eight,
+        parity parity = parity::none,
+        stop_bits stopbits = stop_bits::one,
+        flow_ctrl flowcontrol = flow_ctrl::none
     );
 
-    Serial(const Serial&) = delete;
-    Serial& operator=(const Serial&) = delete;
+    serial(const serial&) = delete;
+    serial& operator=(const serial&) = delete;
 
-    ~Serial();
+    ~serial();
 
     ///
     /// @brief Opens the serial port, requires a non-empty port and a closed handle.
@@ -270,7 +270,7 @@ public:
     /// @note inter_byte_timeout == 0 disables it; a total timeout of 0 enables non-blocking mode.
     /// @param timeout New timeout conditions.
     ///
-    void set_timeout(const Timeout& timeout);
+    void set_timeout(const timeout& value);
 
     ///
     /// @brief Sets the read and write timeouts from individual fields.
@@ -287,7 +287,7 @@ public:
         std::uint32_t write_timeout_constant,
         std::uint32_t write_timeout_multiplier
     ) {
-        set_timeout(Timeout{
+        set_timeout(timeout{
             inter_byte_timeout,
             read_timeout_constant,
             read_timeout_multiplier,
@@ -297,7 +297,7 @@ public:
     }
 
     /// @return The current read and write timeout conditions.
-    [[nodiscard]] Timeout get_timeout() const;
+    [[nodiscard]] timeout get_timeout() const;
 
     ///
     /// @brief Sets the transmission speed.
