@@ -9,8 +9,6 @@
 
 #include "linux.hxx"
 
-#include <unistd.h>
-
 #include <algorithm>
 #include <array>
 #include <cerrno>
@@ -23,6 +21,7 @@
 #include <sys/select.h>
 #include <termios.h>
 #include <thread>
+#include <unistd.h>
 #include <utility>
 #include <vector>
 
@@ -37,7 +36,7 @@ namespace {
 ///
 timespec to_timespec(std::int64_t millis) {
     if (millis < 0) { millis = 0; }
-    return timespec{
+    return timespec {
         .tv_sec = static_cast<time_t>(millis / 1000),
         .tv_nsec = static_cast<long>(millis % 1000) * 1000000L,
     };
@@ -50,17 +49,41 @@ timespec to_timespec(std::int64_t millis) {
 /// @return True when the rate is one of the standard speeds.
 ///
 bool standard_speed(std::uint32_t baudrate, speed_t& out) {
-    static constexpr std::array<std::pair<std::uint32_t, speed_t>, 31> table{{
-        {0, B0},           {50, B50},         {75, B75},         {110, B110},
-        {134, B134},       {150, B150},       {200, B200},       {300, B300},
-        {600, B600},       {1200, B1200},     {1800, B1800},     {2400, B2400},
-        {4800, B4800},     {9600, B9600},     {19200, B19200},   {38400, B38400},
-        {57600, B57600},   {115200, B115200}, {230400, B230400}, {460800, B460800},
-        {500000, B500000}, {576000, B576000}, {921600, B921600}, {1000000, B1000000},
-        {1152000, B1152000},
-        {1500000, B1500000}, {2000000, B2000000}, {2500000, B2500000}, {3000000, B3000000},
-        {3500000, B3500000}, {4000000, B4000000},
-    }};
+    static constexpr std::array<std::pair<std::uint32_t, speed_t>, 31> table {
+        {
+         { 0, B0 },
+         { 50, B50 },
+         { 75, B75 },
+         { 110, B110 },
+         { 134, B134 },
+         { 150, B150 },
+         { 200, B200 },
+         { 300, B300 },
+         { 600, B600 },
+         { 1200, B1200 },
+         { 1800, B1800 },
+         { 2400, B2400 },
+         { 4800, B4800 },
+         { 9600, B9600 },
+         { 19200, B19200 },
+         { 38400, B38400 },
+         { 57600, B57600 },
+         { 115200, B115200 },
+         { 230400, B230400 },
+         { 460800, B460800 },
+         { 500000, B500000 },
+         { 576000, B576000 },
+         { 921600, B921600 },
+         { 1000000, B1000000 },
+         { 1152000, B1152000 },
+         { 1500000, B1500000 },
+         { 2000000, B2000000 },
+         { 2500000, B2500000 },
+         { 3000000, B3000000 },
+         { 3500000, B3500000 },
+         { 4000000, B4000000 },
+         }
+    };
 
     for (const auto& [value, speed] : table) {
         if (baudrate == value) {
@@ -100,8 +123,7 @@ serial::impl::impl(
 serial::impl::~impl() {
     try {
         close();
-    } catch (...) {
-    }
+    } catch (...) {}
 }
 
 ///
@@ -154,17 +176,15 @@ void serial::impl::open() {
 /// @brief Writes all stored framing settings into the termios structure.
 ///
 void serial::impl::reconfigure() {
-    if (fd_ == -1) {
-        throw io_exception("Invalid file descriptor, is the serial port open?");
-    }
+    if (fd_ == -1) { throw io_exception("Invalid file descriptor, is the serial port open?"); }
 
-    termios options{};
+    termios options {};
     if (::tcgetattr(fd_, &options) == -1) { throw_errno("tcgetattr"); }
 
     // Raw mode: local line, receiver enabled, no echo/canonical/signal/output processing.
     options.c_cflag |= static_cast<tcflag_t>(CLOCAL | CREAD);
-    options.c_lflag &= static_cast<tcflag_t>(~(ICANON | ECHO | ECHOE | ECHOK | ECHONL | ISIG
-                                              | IEXTEN));
+    options.c_lflag
+        &= static_cast<tcflag_t>(~(ICANON | ECHO | ECHOE | ECHOK | ECHONL | ISIG | IEXTEN));
     options.c_oflag &= static_cast<tcflag_t>(~OPOST);
     options.c_iflag &= static_cast<tcflag_t>(~(INLCR | IGNCR | ICRNL | IGNBRK | IUCLC | PARMRK));
 
@@ -176,8 +196,8 @@ void serial::impl::reconfigure() {
     // Data bits
     options.c_cflag &= static_cast<tcflag_t>(~CSIZE);
     switch (bytesize_) {
-    case data_bits::five: options.c_cflag |= CS5; break;
-    case data_bits::six: options.c_cflag |= CS6; break;
+    case data_bits::five:  options.c_cflag |= CS5; break;
+    case data_bits::six:   options.c_cflag |= CS6; break;
     case data_bits::seven: options.c_cflag |= CS7; break;
     case data_bits::eight: options.c_cflag |= CS8; break;
     }
@@ -189,9 +209,7 @@ void serial::impl::reconfigure() {
     // Parity (Linux supports mark and space through CMSPAR)
     options.c_iflag &= static_cast<tcflag_t>(~(INPCK | ISTRIP));
     switch (parity_) {
-    case parity::none:
-        options.c_cflag &= static_cast<tcflag_t>(~(PARENB | PARODD | CMSPAR));
-        break;
+    case parity::none: options.c_cflag &= static_cast<tcflag_t>(~(PARENB | PARODD | CMSPAR)); break;
     case parity::even:
         options.c_cflag = static_cast<tcflag_t>((options.c_cflag & ~(PARODD | CMSPAR)) | PARENB);
         break;
@@ -218,7 +236,7 @@ void serial::impl::reconfigure() {
 
     // Non-standard baud rates through the async driver's custom divisor.
     if (!standard) {
-        serial_struct ser{};
+        serial_struct ser {};
         if (::ioctl(fd_, TIOCGSERIAL, &ser) == -1) { throw_errno("TIOCGSERIAL"); }
         ser.custom_divisor = ser.baud_base / static_cast<int>(baudrate_);
         ser.flags = static_cast<int>((ser.flags & ~ASYNC_SPD_MASK) | ASYNC_SPD_CUST);
@@ -240,8 +258,8 @@ void serial::impl::update_byte_time() {
     const double bit_time_ns = 1e9 / baudrate_;
     byte_time_ns_ = static_cast<std::uint32_t>(
         bit_time_ns
-        * (1.0 + static_cast<int>(bytesize_)
-           + static_cast<int>(parity_ != parity::none ? 1 : 0) + stop_bits_count(stopbits_))
+        * (1.0 + static_cast<int>(bytesize_) + static_cast<int>(parity_ != parity::none ? 1 : 0)
+           + stop_bits_count(stopbits_))
     );
 }
 
@@ -278,6 +296,8 @@ size_t serial::impl::available() {
 /// @brief Blocks in pselect until the descriptor is readable or the timeout expires.
 ///
 bool serial::impl::wait_readable(std::uint32_t timeout) {
+    require_open("serial::wait_readable");
+
     fd_set readfds;
     FD_ZERO(&readfds);
     FD_SET(fd_, &readfds);
@@ -296,9 +316,9 @@ bool serial::impl::wait_readable(std::uint32_t timeout) {
 /// @brief Sleeps for the time needed to transmit count bytes at the current settings.
 ///
 void serial::impl::wait_byte_times(size_t count) {
-    std::this_thread::sleep_for(std::chrono::nanoseconds(
-        static_cast<std::uint64_t>(byte_time_ns_) * count
-    ));
+    std::this_thread::sleep_for(
+        std::chrono::nanoseconds(static_cast<std::uint64_t>(byte_time_ns_) * count)
+    );
 }
 
 ///
@@ -309,11 +329,11 @@ size_t serial::impl::read(std::span<std::uint8_t> buf) {
 
     // Total budget: constant + multiplier * requested bytes.
     const std::int64_t total_ms = static_cast<std::int64_t>(timeout_.read_timeout_constant)
-        + static_cast<std::int64_t>(timeout_.read_timeout_multiplier)
-              * static_cast<std::int64_t>(buf.size());
-    const millisecond_timer total_timeout(static_cast<std::uint32_t>(
-        std::max<std::int64_t>(total_ms, 0)
-    ));
+                                + static_cast<std::int64_t>(timeout_.read_timeout_multiplier)
+                                      * static_cast<std::int64_t>(buf.size());
+    const millisecond_timer total_timeout(
+        static_cast<std::uint32_t>(std::max<std::int64_t>(total_ms, 0))
+    );
 
     size_t bytes_read = 0;
     while (bytes_read < buf.size()) {
@@ -345,11 +365,11 @@ size_t serial::impl::write(std::span<const std::uint8_t> data) {
     require_open("serial::write");
 
     const std::int64_t total_ms = static_cast<std::int64_t>(timeout_.write_timeout_constant)
-        + static_cast<std::int64_t>(timeout_.write_timeout_multiplier)
-              * static_cast<std::int64_t>(data.size());
-    const millisecond_timer total_timeout(static_cast<std::uint32_t>(
-        std::max<std::int64_t>(total_ms, 0)
-    ));
+                                + static_cast<std::int64_t>(timeout_.write_timeout_multiplier)
+                                      * static_cast<std::int64_t>(data.size());
+    const millisecond_timer total_timeout(
+        static_cast<std::uint32_t>(std::max<std::int64_t>(total_ms, 0))
+    );
 
     size_t bytes_written = 0;
     while (bytes_written < data.size()) {

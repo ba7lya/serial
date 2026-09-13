@@ -7,16 +7,15 @@
 /// @copyright Copyright (c) 2026
 ///
 
-#include <gtest/gtest.h>
-#include <pty.h>
-#include <unistd.h>
-
 #include <array>
 #include <cerrno>
 #include <cstring>
+#include <gtest/gtest.h>
 #include <memory>
+#include <pty.h>
 #include <string>
 #include <string_view>
+#include <unistd.h>
 
 #include "serial.hxx"
 
@@ -47,16 +46,13 @@ protected:
     /// @brief Writes to the master end so that the library can read it.
     /// @param text Data to feed into the port.
     void feed_master(std::string_view text) {
-        ASSERT_EQ(
-            ::write(master_fd_, text.data(), text.size()),
-            static_cast<ssize_t>(text.size())
-        );
+        ASSERT_EQ(::write(master_fd_, text.data(), text.size()), static_cast<ssize_t>(text.size()));
     }
 
     std::unique_ptr<serial> port_;
     int master_fd_ = -1;
     int slave_fd_ = -1;
-    char name_[100]{};
+    char name_[100] {};
 };
 
 ///
@@ -72,7 +68,7 @@ TEST_F(serial_tests, readWorks) {
 ///
 TEST_F(serial_tests, writeWorks) {
     ASSERT_EQ(port_->write("abc\n"), 4u);
-    std::array<char, 5> buf{};
+    std::array<char, 5> buf {};
     const ssize_t n = ::read(master_fd_, buf.data(), 4);
     ASSERT_EQ(n, 4);
     EXPECT_EQ(std::string(buf.data(), static_cast<size_t>(n)), "abc\n");

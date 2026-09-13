@@ -7,11 +7,10 @@
 /// @copyright Copyright (c) 2026
 ///
 
-#include <gtest/gtest.h>
-
 #include <array>
 #include <chrono>
 #include <cstdint>
+#include <gtest/gtest.h>
 #include <memory>
 #include <thread>
 

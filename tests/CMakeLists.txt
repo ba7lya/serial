@@ -2,7 +2,10 @@
 find_package(GTest CONFIG REQUIRED)
 include(GoogleTest)
 
-add_executable(serial_unit_tests serial_test.cxx)
+add_executable(serial_unit_tests
+    serial_test.cxx
+    exception_test.cxx
+)
 target_link_libraries(serial_unit_tests PRIVATE ba7lya::serial GTest::gtest GTest::gtest_main)
 target_compile_features(serial_unit_tests PRIVATE cxx_std_23)
 
