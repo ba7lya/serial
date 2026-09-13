@@ -7,16 +7,14 @@
 /// @copyright Copyright (c) 2026
 ///
 
-#include <windows.h>
-
+#include <array>
+#include <cwchar>
 #include <devguid.h>
 #include <initguid.h>
 #include <setupapi.h>
-
-#include <array>
-#include <cwchar>
 #include <string>
 #include <vector>
+#include <windows.h>
 
 #include "serial.hxx"
 
@@ -65,7 +63,7 @@ std::string utf8_encode(std::wstring_view text) {
 /// @return The port name as UTF-8, empty when absent or unreadable.
 ///
 std::string get_port_name(HDEVINFO device_info_set, SP_DEVINFO_DATA& device_data) {
-    std::array<wchar_t, registry_buffer_chars> buffer{};
+    std::array<wchar_t, registry_buffer_chars> buffer {};
     DWORD size_bytes = sizeof(buffer);
 
     HKEY hkey = ::SetupDiOpenDevRegKey(
@@ -78,15 +76,20 @@ std::string get_port_name(HDEVINFO device_info_set, SP_DEVINFO_DATA& device_data
     );
     if (hkey == INVALID_HANDLE_VALUE) { return {}; }
 
-    const bool ok
-        = ::RegQueryValueExW(hkey, L"PortName", nullptr, nullptr,
-                             reinterpret_cast<LPBYTE>(buffer.data()), &size_bytes)
-        == ERROR_SUCCESS;
+    const bool ok = ::RegQueryValueExW(
+                        hkey,
+                        L"PortName",
+                        nullptr,
+                        nullptr,
+                        reinterpret_cast<LPBYTE>(buffer.data()),
+                        &size_bytes
+                    )
+                 == ERROR_SUCCESS;
     ::RegCloseKey(hkey);
 
     if (!ok || size_bytes < sizeof(wchar_t)) { return {}; }
     const size_t chars = (size_bytes / sizeof(wchar_t)) - 1; // drop the terminating NUL
-    return utf8_encode({buffer.data(), chars});
+    return utf8_encode({ buffer.data(), chars });
 }
 
 ///
@@ -101,7 +104,7 @@ std::string get_device_property(
     SP_DEVINFO_DATA& device_data,
     DWORD property
 ) {
-    std::array<wchar_t, registry_buffer_chars> buffer{};
+    std::array<wchar_t, registry_buffer_chars> buffer {};
     DWORD type = 0;
     DWORD size_bytes = 0;
 
@@ -119,7 +122,7 @@ std::string get_device_property(
     // SPDRP_HARDWAREID is REG_MULTI_SZ: keep only the first, NUL-terminated element.
     const size_t max_chars = size_bytes / sizeof(wchar_t) - 1;
     const size_t chars = wcsnlen(buffer.data(), max_chars);
-    return utf8_encode({buffer.data(), chars});
+    return utf8_encode({ buffer.data(), chars });
 }
 
 } // namespace
@@ -135,12 +138,10 @@ std::vector<serial_port_info> list_ports() {
         = ::SetupDiGetClassDevs(&GUID_DEVCLASS_PORTS, nullptr, nullptr, DIGCF_PRESENT);
     if (device_info_set == INVALID_HANDLE_VALUE) { return ports; }
 
-    SP_DEVINFO_DATA device_data{};
+    SP_DEVINFO_DATA device_data {};
     device_data.cbSize = sizeof(device_data);
 
-    for (DWORD index = 0;
-         ::SetupDiEnumDeviceInfo(device_info_set, index, &device_data);
-         ++index) {
+    for (DWORD index = 0; ::SetupDiEnumDeviceInfo(device_info_set, index, &device_data); ++index) {
         const std::string name = get_port_name(device_info_set, device_data);
 
         // Ignore parallel ports and entries without a usable name.

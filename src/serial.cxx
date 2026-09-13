@@ -33,9 +33,7 @@ serial::serial(
     stop_bits stopbits,
     flow_ctrl flowcontrol
 )
-    : pimpl_(
-        std::make_unique<impl>(port, baudrate, bytesize, parity, stopbits, flowcontrol)
-    ) {
+    : pimpl_(std::make_unique<impl>(port, baudrate, bytesize, parity, stopbits, flowcontrol)) {
     pimpl_->set_timeout(value);
 }
 
@@ -157,8 +155,7 @@ size_t serial::readline(std::string& buffer, size_t size, std::string_view eol) 
             && std::string_view(
                    reinterpret_cast<const char*>(tmp.data() + read_so_far - eol.size()),
                    eol.size()
-               )
-                   == eol) {
+               ) == eol) {
             break; // End of line found
         }
     }
@@ -187,7 +184,8 @@ std::vector<std::string> serial::readlines(size_t size, std::string_view eol) {
     size_t start_of_line = 0;
 
     // Turns the bytes in [start_of_line, read_so_far) into a line.
-    const auto flush_line = [&] {
+    const auto flush_line = [&]
+    {
         if (start_of_line != read_so_far) {
             lines.emplace_back(
                 reinterpret_cast<const char*>(tmp.data() + start_of_line),
@@ -205,8 +203,7 @@ std::vector<std::string> serial::readlines(size_t size, std::string_view eol) {
             && std::string_view(
                    reinterpret_cast<const char*>(tmp.data() + read_so_far - eol.size()),
                    eol.size()
-               )
-                   == eol) {
+               ) == eol) {
             flush_line();
         }
     }
@@ -235,10 +232,7 @@ size_t serial::write(const std::vector<std::uint8_t>& data) {
 /// @note Delegates to the locking overload; must not lock the mutex itself.
 ///
 size_t serial::write(const std::string& data) {
-    return write(std::span(
-        reinterpret_cast<const std::uint8_t*>(data.data()),
-        data.size()
-    ));
+    return write(std::span(reinterpret_cast<const std::uint8_t*>(data.data()), data.size()));
 }
 
 ///

@@ -9,13 +9,12 @@
 
 #pragma once
 
-#include <termios.h>
-
 #include <chrono>
 #include <cstdint>
 #include <span>
 #include <string>
 #include <string_view>
+#include <termios.h>
 
 #include "serial.hxx"
 
@@ -82,7 +81,8 @@ public:
     void close();
 
     /// @return True while the descriptor is valid.
-    [[nodiscard]] bool is_open() const;
+    [[nodiscard]]
+    bool is_open() const;
 
     /// @return Bytes waiting in the kernel input queue.
     size_t available();
@@ -151,50 +151,58 @@ public:
     void set_port(const std::string& port);
 
     /// @return The stored device path.
-    [[nodiscard]] std::string get_port() const;
+    [[nodiscard]]
+    std::string get_port() const;
 
     /// @brief Stores the timeouts (enforced in read/write, not by the driver).
     void set_timeout(const timeout& value);
 
     /// @return The stored timeout conditions.
-    [[nodiscard]] timeout get_timeout() const;
+    [[nodiscard]]
+    timeout get_timeout() const;
 
     /// @brief Stores the baud rate and re-applies the configuration when open.
     void set_baudrate(std::uint32_t baudrate);
 
     /// @return The stored baud rate.
-    [[nodiscard]] std::uint32_t get_baudrate() const;
+    [[nodiscard]]
+    std::uint32_t get_baudrate() const;
 
     /// @brief Stores the data bits and re-applies the configuration when open.
     void set_data_bits(data_bits bytesize);
 
     /// @return The stored data bits.
-    [[nodiscard]] data_bits get_data_bits() const;
+    [[nodiscard]]
+    data_bits get_data_bits() const;
 
     /// @brief Stores the parity and re-applies the configuration when open.
     void set_parity(parity parity);
 
     /// @return The stored parity.
-    [[nodiscard]] parity get_parity() const;
+    [[nodiscard]]
+    parity get_parity() const;
 
     /// @brief Stores the stop bits and re-applies the configuration when open.
     void set_stop_bits(stop_bits stopbits);
 
     /// @return The stored stop bits.
-    [[nodiscard]] stop_bits get_stop_bits() const;
+    [[nodiscard]]
+    stop_bits get_stop_bits() const;
 
     /// @brief Stores the flow control and re-applies the configuration when open.
     void set_flow_ctrl(flow_ctrl flowcontrol);
 
     /// @return The stored flow control.
-    [[nodiscard]] flow_ctrl get_flow_ctrl() const;
+    [[nodiscard]]
+    flow_ctrl get_flow_ctrl() const;
 
 private:
     /// @brief Throws io_exception unless the descriptor is open.
     void require_open(std::string_view operation) const;
 
     /// @brief Throws io_exception carrying the current errno, with context.
-    [[noreturn]] static void throw_errno(std::string_view context);
+    [[noreturn]]
+    static void throw_errno(std::string_view context);
 
     /// @brief Reads one modem status bit via TIOCMGET.
     bool modem_line(int mask);
@@ -210,14 +218,14 @@ private:
 
     bool is_open_ = false;
 
-    timeout timeout_{};
-    std::uint32_t baudrate_{};
-    std::uint32_t byte_time_ns_{}; // Nanoseconds to transmit one byte
+    timeout timeout_ {};
+    std::uint32_t baudrate_ {};
+    std::uint32_t byte_time_ns_ {}; // Nanoseconds to transmit one byte
 
-    parity parity_{};
-    data_bits bytesize_{};
-    stop_bits stopbits_{};
-    flow_ctrl flowcontrol_{};
+    parity parity_ {};
+    data_bits bytesize_ {};
+    stop_bits stopbits_ {};
+    flow_ctrl flowcontrol_ {};
 };
 
 } // namespace ba7lya::serial

@@ -19,7 +19,8 @@ namespace {
 /// @brief Wraps the last Win32 error into an io_exception with context.
 /// @param context Description of the operation that failed.
 ///
-[[noreturn]] void throw_last_error(const std::string& context) {
+[[noreturn]]
+void throw_last_error(const std::string& context) {
     throw io_exception(
         std::error_code(static_cast<int>(::GetLastError()), std::system_category()),
         context
@@ -87,8 +88,7 @@ serial::impl::impl(
 serial::impl::~impl() {
     try {
         close();
-    } catch (...) {
-    }
+    } catch (...) {}
 }
 
 ///
@@ -141,47 +141,45 @@ void serial::impl::reconfigure() {
         throw io_exception("Invalid file descriptor, is the serial port open?");
     }
 
-    DCB dcb{};
+    DCB dcb {};
     dcb.DCBlength = sizeof(dcb);
-    if (!::GetCommState(fd_, &dcb)) {
-        throw_last_error("Error getting the serial port state");
-    }
+    if (!::GetCommState(fd_, &dcb)) { throw_last_error("Error getting the serial port state"); }
 
     // The DCB BaudRate field takes any DWORD; the standard CBR_* values are plain numbers.
     dcb.BaudRate = baudrate_;
 
     switch (bytesize_) {
-    case data_bits::five: dcb.ByteSize = 5; break;
-    case data_bits::six: dcb.ByteSize = 6; break;
+    case data_bits::five:  dcb.ByteSize = 5; break;
+    case data_bits::six:   dcb.ByteSize = 6; break;
     case data_bits::seven: dcb.ByteSize = 7; break;
     case data_bits::eight: dcb.ByteSize = 8; break;
-    default: throw std::invalid_argument("invalid data bits");
+    default:               throw std::invalid_argument("invalid data bits");
     }
 
     switch (parity_) {
-    case parity::none: dcb.Parity = NOPARITY; break;
-    case parity::odd: dcb.Parity = ODDPARITY; break;
-    case parity::even: dcb.Parity = EVENPARITY; break;
-    case parity::mark: dcb.Parity = MARKPARITY; break;
+    case parity::none:  dcb.Parity = NOPARITY; break;
+    case parity::odd:   dcb.Parity = ODDPARITY; break;
+    case parity::even:  dcb.Parity = EVENPARITY; break;
+    case parity::mark:  dcb.Parity = MARKPARITY; break;
     case parity::space: dcb.Parity = SPACEPARITY; break;
-    default: throw std::invalid_argument("invalid parity");
+    default:            throw std::invalid_argument("invalid parity");
     }
 
     switch (stopbits_) {
-    case stop_bits::one: dcb.StopBits = ONESTOPBIT; break;
+    case stop_bits::one:            dcb.StopBits = ONESTOPBIT; break;
     case stop_bits::one_point_five: dcb.StopBits = ONE5STOPBITS; break;
-    case stop_bits::two: dcb.StopBits = TWOSTOPBITS; break;
-    default: throw std::invalid_argument("invalid stop bit");
+    case stop_bits::two:            dcb.StopBits = TWOSTOPBITS; break;
+    default:                        throw std::invalid_argument("invalid stop bit");
     }
 
     dcb.fOutxCtsFlow = flowcontrol_ == flow_ctrl::hardware;
-    dcb.fRtsControl = flowcontrol_ == flow_ctrl::hardware ? RTS_CONTROL_HANDSHAKE
-                                                          : RTS_CONTROL_DISABLE;
+    dcb.fRtsControl
+        = flowcontrol_ == flow_ctrl::hardware ? RTS_CONTROL_HANDSHAKE : RTS_CONTROL_DISABLE;
     dcb.fOutX = dcb.fInX = flowcontrol_ == flow_ctrl::software;
 
     if (!::SetCommState(fd_, &dcb)) { throw_last_error("Error setting serial port settings"); }
 
-    COMMTIMEOUTS timeouts{
+    COMMTIMEOUTS timeouts {
         .ReadIntervalTimeout = timeout_.inter_byte_timeout,
         .ReadTotalTimeoutMultiplier = timeout_.read_timeout_multiplier,
         .ReadTotalTimeoutConstant = timeout_.read_timeout_constant,
@@ -215,7 +213,7 @@ bool serial::impl::is_open() const { return is_open_; }
 ///
 size_t serial::impl::available() {
     if (!is_open_) { return 0; }
-    COMSTAT status{};
+    COMSTAT status {};
     if (!::ClearCommError(fd_, nullptr, &status)) {
         throw_last_error("Error while checking status of the serial port");
     }
@@ -367,12 +365,8 @@ bool serial::impl::get_cd() {
 ///
 void serial::impl::set_port(const std::string& port) {
     constexpr std::string_view prefix = "\\\\.\\\\";
-    if (port.starts_with(prefix)) {
-        port_ = port.substr(prefix.size());
-    }
-    else {
-        port_ = port;
-    }
+    if (port.starts_with(prefix)) { port_ = port.substr(prefix.size()); }
+    else { port_ = port; }
 }
 
 ///

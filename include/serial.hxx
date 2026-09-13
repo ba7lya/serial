@@ -74,23 +74,23 @@ struct timeout {
     /// @return A timeout representing this simple timeout.
     ///
     static constexpr timeout simple_timeout(std::uint32_t timeout) {
-        return {max(), timeout, 0, timeout, 0};
+        return { max(), timeout, 0, timeout, 0 };
     }
 
     /// @brief Milliseconds between received bytes before a read times out (0 disables).
-    std::uint32_t inter_byte_timeout{};
+    std::uint32_t inter_byte_timeout {};
 
     /// @brief Constant milliseconds to wait after calling read.
-    std::uint32_t read_timeout_constant{};
+    std::uint32_t read_timeout_constant {};
 
     /// @brief Milliseconds multiplied by the requested byte count, added to the read constant.
-    std::uint32_t read_timeout_multiplier{};
+    std::uint32_t read_timeout_multiplier {};
 
     /// @brief Constant milliseconds to wait after calling write.
-    std::uint32_t write_timeout_constant{};
+    std::uint32_t write_timeout_constant {};
 
     /// @brief Milliseconds multiplied by the written byte count, added to the write constant.
-    std::uint32_t write_timeout_multiplier{};
+    std::uint32_t write_timeout_multiplier {};
 };
 
 ///
@@ -159,7 +159,8 @@ public:
     void close();
 
     /// @return True while the port handle is open.
-    [[nodiscard]] bool is_open() const;
+    [[nodiscard]]
+    bool is_open() const;
 
     /// @return Number of bytes readable from the input buffer right now.
     size_t available();
@@ -263,7 +264,8 @@ public:
     void set_port(const std::string& port);
 
     /// @return The currently configured port address.
-    [[nodiscard]] std::string get_port() const;
+    [[nodiscard]]
+    std::string get_port() const;
 
     ///
     /// @brief Sets the read and write timeouts.
@@ -287,17 +289,18 @@ public:
         std::uint32_t write_timeout_constant,
         std::uint32_t write_timeout_multiplier
     ) {
-        set_timeout(timeout{
-            inter_byte_timeout,
-            read_timeout_constant,
-            read_timeout_multiplier,
-            write_timeout_constant,
-            write_timeout_multiplier
-        });
+        set_timeout(
+            timeout { inter_byte_timeout,
+                      read_timeout_constant,
+                      read_timeout_multiplier,
+                      write_timeout_constant,
+                      write_timeout_multiplier }
+        );
     }
 
     /// @return The current read and write timeout conditions.
-    [[nodiscard]] timeout get_timeout() const;
+    [[nodiscard]]
+    timeout get_timeout() const;
 
     ///
     /// @brief Sets the transmission speed.
@@ -306,7 +309,8 @@ public:
     void set_baudrate(std::uint32_t baudrate);
 
     /// @return The current baud rate in bits per second.
-    [[nodiscard]] std::uint32_t get_baudrate() const;
+    [[nodiscard]]
+    std::uint32_t get_baudrate() const;
 
     ///
     /// @brief Sets the number of data bits per frame.
@@ -315,7 +319,8 @@ public:
     void set_data_bits(data_bits bytesize);
 
     /// @return The current data bit count.
-    [[nodiscard]] data_bits get_data_bits() const;
+    [[nodiscard]]
+    data_bits get_data_bits() const;
 
     ///
     /// @brief Sets the parity method.
@@ -324,7 +329,8 @@ public:
     void set_parity(parity parity);
 
     /// @return The current parity method.
-    [[nodiscard]] parity get_parity() const;
+    [[nodiscard]]
+    parity get_parity() const;
 
     ///
     /// @brief Sets the number of stop bits.
@@ -333,7 +339,8 @@ public:
     void set_stop_bits(stop_bits stopbits);
 
     /// @return The current stop bit setting.
-    [[nodiscard]] stop_bits get_stop_bits() const;
+    [[nodiscard]]
+    stop_bits get_stop_bits() const;
 
     ///
     /// @brief Sets the flow control method.
@@ -342,7 +349,8 @@ public:
     void set_flow_ctrl(flow_ctrl flowcontrol);
 
     /// @return The current flow control method.
-    [[nodiscard]] flow_ctrl get_flow_ctrl() const;
+    [[nodiscard]]
+    flow_ctrl get_flow_ctrl() const;
 
     /// @brief Blocks until both input and output buffers are flushed.
     void flush();

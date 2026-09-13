@@ -7,11 +7,10 @@
 /// @copyright Copyright (c) 2026
 ///
 
-#include <glob.h>
-
+#include <array>
 #include <cstdlib>
 #include <fstream>
-#include <array>
+#include <glob.h>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -35,7 +34,7 @@ std::vector<std::string> glob(const std::vector<std::string>& patterns) {
     std::vector<std::string> found;
     if (patterns.empty()) { return found; }
 
-    glob_t results{};
+    glob_t results {};
     int retval = ::glob(patterns[0].c_str(), 0, nullptr, &results);
     for (auto it = patterns.begin() + 1; it != patterns.end(); ++it) {
         retval = ::glob(it->c_str(), GLOB_APPEND, nullptr, &results);
@@ -86,7 +85,8 @@ bool path_exists(const std::string& path) {
 ///
 std::string realpath(const std::string& path) {
     std::unique_ptr<char, decltype(&std::free)> resolved(
-        ::realpath(path.c_str(), nullptr), &std::free
+        ::realpath(path.c_str(), nullptr),
+        &std::free
     );
     return resolved ? std::string(resolved.get()) : std::string();
 }
@@ -163,7 +163,7 @@ std::pair<std::string, std::string> get_sysfs_info(const std::string& device_pat
 
     if (friendly_name.empty()) { friendly_name = device_name; }
     if (hardware_id.empty()) { hardware_id = "n/a"; }
-    return {friendly_name, hardware_id};
+    return { friendly_name, hardware_id };
 }
 
 } // namespace
@@ -173,15 +173,18 @@ std::pair<std::string, std::string> get_sysfs_info(const std::string& device_pat
 /// @return One serial_port_info per matching /dev node.
 ///
 std::vector<serial_port_info> list_ports() {
-    static constexpr std::array<std::string_view, 6> patterns{{
-        "/dev/ttyACM*", "/dev/ttyS*", "/dev/ttyUSB*",
-        "/dev/tty.*",   "/dev/cu.*", "/dev/rfcomm*",
-    }};
+    static constexpr std::array<std::string_view, 6> patterns {
+        {
+         "/dev/ttyACM*", "/dev/ttyS*",
+         "/dev/ttyUSB*", "/dev/tty.*",
+         "/dev/cu.*", "/dev/rfcomm*",
+         }
+    };
 
     std::vector<serial_port_info> results;
-    for (const std::string& device : glob({patterns.begin(), patterns.end()})) {
+    for (const std::string& device : glob({ patterns.begin(), patterns.end() })) {
         const auto [friendly_name, hardware_id] = get_sysfs_info(device);
-        results.push_back({device, friendly_name, hardware_id});
+        results.push_back({ device, friendly_name, hardware_id });
     }
     return results;
 }
