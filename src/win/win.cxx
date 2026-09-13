@@ -224,6 +224,7 @@ size_t serial::impl::available() {
 /// @brief Unsupported: Win32 comm API has no wait-for-readable primitive.
 ///
 bool serial::impl::wait_readable(std::uint32_t) {
+    require_open("serial::wait_readable");
     throw io_exception("wait_readable is not implemented on Windows.");
 }
 
@@ -231,6 +232,7 @@ bool serial::impl::wait_readable(std::uint32_t) {
 /// @brief Unsupported on Windows; the caller can sleep itself.
 ///
 void serial::impl::wait_byte_times(size_t) {
+    require_open("serial::wait_byte_times");
     throw io_exception("wait_byte_times is not implemented on Windows.");
 }
 
@@ -286,6 +288,7 @@ void serial::impl::flush_tx_buffer() {
 /// @brief Unsupported: Win32 has no timed break facility.
 ///
 void serial::impl::send_break(int) {
+    require_open("serial::send_break");
     throw io_exception("send_break is not supported on Windows.");
 }
 
