@@ -9,12 +9,15 @@
 
 #include <array>
 #include <cwchar>
-#include <devguid.h>
-#include <initguid.h>
-#include <setupapi.h>
 #include <string>
 #include <vector>
-#include <windows.h>
+
+// clang-format off
+#include <windows.h> // must precede initguid/devguid/setupapi
+#include <initguid.h> // must precede devguid.h to instantiate the GUIDs
+#include <devguid.h>
+#include <setupapi.h>
+// clang-format on
 
 #include "serial.hxx"
 
