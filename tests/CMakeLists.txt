@@ -5,6 +5,7 @@ include(GoogleTest)
 set(test_sources
     common/serial_test.cxx
     common/exception_test.cxx
+    common/real_port_test.cxx
 )
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     # pty-based and timing tests, POSIX only.
