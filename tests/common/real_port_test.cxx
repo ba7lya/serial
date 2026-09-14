@@ -69,8 +69,8 @@ TEST_F(real_port_test, available_queryable) { EXPECT_NO_THROW(port_->available()
 ///
 TEST_F(real_port_test, read_times_out_empty) {
     std::string data;
-    const size_t n = port_->read(data, 8); // 100 ms timeout set in SetUp
-    EXPECT_EQ(n, 0u);
+    const size_t bytes_read = port_->read(data, 8); // 100 ms timeout set in SetUp
+    EXPECT_EQ(bytes_read, 0U);
     EXPECT_TRUE(data.empty());
     EXPECT_EQ(port_->read(1), "");
 }
@@ -79,8 +79,8 @@ TEST_F(real_port_test, read_times_out_empty) {
 /// @brief Writing a small buffer completes without error.
 ///
 TEST_F(real_port_test, write_succeeds) {
-    const size_t n = port_->write("ba7lya\r\n");
-    EXPECT_GT(n, 0u);
+    const size_t bytes_written = port_->write("ba7lya\r\n");
+    EXPECT_GT(bytes_written, 0U);
 }
 
 ///

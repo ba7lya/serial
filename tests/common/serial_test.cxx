@@ -25,12 +25,12 @@ TEST(serial_test, constructs_closed) {
     serial port;
     EXPECT_FALSE(port.is_open());
     EXPECT_EQ(port.get_port(), "");
-    EXPECT_EQ(port.get_baudrate(), 9600u);
+    EXPECT_EQ(port.get_baudrate(), 9600U);
     EXPECT_EQ(port.get_data_bits(), data_bits::eight);
     EXPECT_EQ(port.get_parity(), parity::none);
     EXPECT_EQ(port.get_stop_bits(), stop_bits::one);
     EXPECT_EQ(port.get_flow_ctrl(), flow_ctrl::none);
-    EXPECT_EQ(port.available(), 0u);
+    EXPECT_EQ(port.available(), 0U);
 }
 
 ///
@@ -121,12 +121,12 @@ TEST(serial_test, settings_roundtrip) {
     port.set_flow_ctrl(flow_ctrl::hardware);
     port.set_timeout(timeout::simple_timeout(500));
 
-    EXPECT_EQ(port.get_baudrate(), 115200u);
+    EXPECT_EQ(port.get_baudrate(), 115200U);
     EXPECT_EQ(port.get_data_bits(), data_bits::seven);
     EXPECT_EQ(port.get_parity(), parity::even);
     EXPECT_EQ(port.get_stop_bits(), stop_bits::two);
     EXPECT_EQ(port.get_flow_ctrl(), flow_ctrl::hardware);
-    EXPECT_EQ(port.get_timeout().read_timeout_constant, 500u);
+    EXPECT_EQ(port.get_timeout().read_timeout_constant, 500U);
 }
 
 ///
@@ -135,12 +135,12 @@ TEST(serial_test, settings_roundtrip) {
 TEST(serial_test, set_timeout_fields) {
     serial port;
     port.set_timeout(1, 2, 3, 4, 5);
-    const timeout t = port.get_timeout();
-    EXPECT_EQ(t.inter_byte_timeout, 1u);
-    EXPECT_EQ(t.read_timeout_constant, 2u);
-    EXPECT_EQ(t.read_timeout_multiplier, 3u);
-    EXPECT_EQ(t.write_timeout_constant, 4u);
-    EXPECT_EQ(t.write_timeout_multiplier, 5u);
+    const timeout cfg = port.get_timeout();
+    EXPECT_EQ(cfg.inter_byte_timeout, 1U);
+    EXPECT_EQ(cfg.read_timeout_constant, 2U);
+    EXPECT_EQ(cfg.read_timeout_multiplier, 3U);
+    EXPECT_EQ(cfg.write_timeout_constant, 4U);
+    EXPECT_EQ(cfg.write_timeout_multiplier, 5U);
 }
 
 ///
@@ -160,11 +160,12 @@ TEST(serial_test, port_name_roundtrip) {
 TEST(serial_test, concurrent_calls_are_safe) {
     serial port;
     std::vector<std::thread> threads;
+    threads.reserve(4);
     for (int i = 0; i < 4; ++i) {
         threads.emplace_back(
             [&port, i]
             {
-                for (int n = 0; n < 200; ++n) {
+                for (int iter = 0; iter < 200; ++iter) {
                     port.set_baudrate(9600 + i);
                     port.set_data_bits(data_bits::eight);
                     port.set_timeout(timeout::simple_timeout(100));
@@ -176,7 +177,7 @@ TEST(serial_test, concurrent_calls_are_safe) {
             }
         );
     }
-    for (auto& t : threads) { t.join(); }
+    for (auto& worker : threads) { worker.join(); }
     EXPECT_FALSE(port.is_open());
 }
 
@@ -184,22 +185,22 @@ TEST(serial_test, concurrent_calls_are_safe) {
 /// @brief timeout helpers produce the documented field layout.
 ///
 TEST(timeout_test, simple_timeout_fields) {
-    const timeout t = timeout::simple_timeout(250);
-    EXPECT_EQ(t.inter_byte_timeout, timeout::max());
-    EXPECT_EQ(t.read_timeout_constant, 250u);
-    EXPECT_EQ(t.read_timeout_multiplier, 0u);
-    EXPECT_EQ(t.write_timeout_constant, 250u);
-    EXPECT_EQ(t.write_timeout_multiplier, 0u);
+    const timeout result = timeout::simple_timeout(250);
+    EXPECT_EQ(result.inter_byte_timeout, timeout::max());
+    EXPECT_EQ(result.read_timeout_constant, 250U);
+    EXPECT_EQ(result.read_timeout_multiplier, 0U);
+    EXPECT_EQ(result.write_timeout_constant, 250U);
+    EXPECT_EQ(result.write_timeout_multiplier, 0U);
 }
 
 ///
 /// @brief A default-constructed timeout is all zeros, i.e. non-blocking.
 ///
 TEST(timeout_test, default_is_zero) {
-    const timeout t;
-    EXPECT_EQ(t.inter_byte_timeout, 0u);
-    EXPECT_EQ(t.read_timeout_constant, 0u);
-    EXPECT_EQ(t.write_timeout_constant, 0u);
+    const timeout zero;
+    EXPECT_EQ(zero.inter_byte_timeout, 0U);
+    EXPECT_EQ(zero.read_timeout_constant, 0U);
+    EXPECT_EQ(zero.write_timeout_constant, 0U);
 }
 
 ///

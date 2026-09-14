@@ -1,0 +1,103 @@
+# Static analysis config for the serial library.
+#
+# Strategy: start from -* (clang-tidy 21+ enables llvmlibc-*/fuchsia-*/llvm-*
+# by default, which is wrong for an application library), turn on every real
+# check group, then exclude ONLY checks whose findings are structural to this
+# project — each exclusion carries its reason in a comment above it. Findings
+# that could be fixed in code were fixed instead of excluded.
+Checks:
+  - -*
+  # ---- enable every real check group ----
+  - bugprone-*,
+    cert-*,
+    clang-analyzer-*,
+    clang-diagnostic-*,
+    concurrency-*,
+    cppcoreguidelines-*,
+    misc-*,
+    modernize-*,
+    performance-*,
+    readability-*
+  # ---- exclusions with reasons ----
+  # duplicate implementations of cppcoreguidelines/readability checks
+  - -hicpp-*,
+  # the timeout struct is five same-typed millisecond values by design
+  - -bugprone-easily-swappable-parameters,
+  # the library is exception-based; main() and tests propagate on purpose
+  - -bugprone-exception-escape,
+  # serial framing (5..8 data bits, 1.5 stop bits) and buffer sizes read
+  # better as literals than as named constants
+  - -cppcoreguidelines-avoid-magic-numbers,
+    -readability-magic-numbers,
+  # byte<->char bridging and buffer pointer walks are essential to a serial
+  # I/O layer
+  - -cppcoreguidelines-pro-type-reinterpret-cast,
+    -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+    -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  # 90+ false positives here; also fights the deliberately grouped include
+  # layout and the windows.h-before-initguid.h ordering constraint
+  - -misc-include-cleaner,
+  # the LLVM manual itself labels this style "not recommended"
+  - -modernize-use-trailing-return-type,
+  # Win32 returns BOOL and uses flag bitfields; spelling out !=FALSE is
+  # worse than the idiom
+  - -readability-implicit-bool-conversion,
+  # gtest fixtures must expose protected state to TEST bodies (framework
+  # idiom); the library itself has no non-private data members so this check
+  # guards nothing outside the fixtures
+  - -cppcoreguidelines-non-private-member-variables-in-classes,
+    -misc-non-private-member-variables-in-classes
+
+WarningsAsErrors: '*'
+HeaderFilterRegex: '(include|src)/.*'
+FormatStyle: file
+
+CheckOptions:
+  # ---- snake_case project convention ----
+  - key: readability-identifier-naming.NamespaceCase
+    value: lower_case
+  - key: readability-identifier-naming.ClassCase
+    value: lower_case
+  - key: readability-identifier-naming.StructCase
+    value: lower_case
+  - key: readability-identifier-naming.UnionCase
+    value: lower_case
+  - key: readability-identifier-naming.EnumCase
+    value: lower_case
+  - key: readability-identifier-naming.EnumConstantCase
+    value: lower_case
+  - key: readability-identifier-naming.FunctionCase
+    value: lower_case
+  - key: readability-identifier-naming.MethodCase
+    value: lower_case
+  - key: readability-identifier-naming.PrivateMemberCase
+    value: lower_case
+  - key: readability-identifier-naming.PrivateMemberSuffix
+    value: _
+  - key: readability-identifier-naming.ProtectedMemberCase
+    value: lower_case
+  - key: readability-identifier-naming.ProtectedMemberSuffix
+    value: _
+  - key: readability-identifier-naming.PublicMemberCase
+    value: lower_case
+  - key: readability-identifier-naming.GlobalConstantCase
+    value: lower_case
+  - key: readability-identifier-naming.StaticConstantCase
+    value: lower_case
+  - key: readability-identifier-naming.ConstexprVariableCase
+    value: lower_case
+  - key: readability-identifier-naming.MacroDefinitionCase
+    value: UPPER_CASE
+  # ---- per-check tuning ----
+  # serial deletes copy operations; requiring move operations on a
+  # mutex-holding pimpl facade is noise
+  - key: cppcoreguidelines-special-member-functions.AllowMissingMoveFunctionsWhenCopyIsDeleted
+    value: true
+  # moving trivially-copyable scalars is a pessimization claim; too noisy
+  - key: performance-move-const-arg.CheckTriviallyCopyableMove
+    value: false
+  # count only the function's own control flow, not the try/catch and if
+  # nodes that gtest EXPECT_*/ASSERT_* macros expand to (a plain list of 19
+  # EXPECT_THROW assertions otherwise scores a cognitive complexity of 437)
+  - key: readability-function-cognitive-complexity.IgnoreMacros
+    value: true

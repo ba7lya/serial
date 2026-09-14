@@ -60,7 +60,7 @@ public:
     /// @param flowcontrol Flow control method.
     ///
     impl(
-        const std::string& port,
+        std::string port,
         std::uint32_t baudrate,
         data_bits bytesize,
         parity parity,

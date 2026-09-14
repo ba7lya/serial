@@ -9,12 +9,12 @@
 
 #include <array>
 #include <cerrno>
-#include <cstring>
 #include <gtest/gtest.h>
 #include <memory>
 #include <pty.h>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <unistd.h>
 
 #include "serial.hxx"
@@ -30,9 +30,13 @@ class serial_tests : public ::testing::Test {
 protected:
     /// @brief Creates a pty pair and opens the slave side through the library.
     void SetUp() override {
-        ASSERT_EQ(::openpty(&master_fd_, &slave_fd_, name_, nullptr, nullptr), 0)
-            << std::strerror(errno);
-        port_ = std::make_unique<serial>(std::string(name_), 115200, timeout::simple_timeout(250));
+        ASSERT_EQ(::openpty(&master_fd_, &slave_fd_, name_.data(), nullptr, nullptr), 0)
+            << std::system_category().message(errno);
+        port_ = std::make_unique<serial>(
+            std::string(name_.data()),
+            115200,
+            timeout::simple_timeout(250)
+        );
         ASSERT_TRUE(port_->is_open());
     }
 
@@ -45,14 +49,14 @@ protected:
 
     /// @brief Writes to the master end so that the library can read it.
     /// @param text Data to feed into the port.
-    void feed_master(std::string_view text) {
+    void feed_master(std::string_view text) const {
         ASSERT_EQ(::write(master_fd_, text.data(), text.size()), static_cast<ssize_t>(text.size()));
     }
 
     std::unique_ptr<serial> port_;
     int master_fd_ = -1;
     int slave_fd_ = -1;
-    char name_[100] {};
+    std::array<char, 100> name_ {};
 };
 
 ///
@@ -67,11 +71,11 @@ TEST_F(serial_tests, readWorks) {
 /// @brief Data written through the library arrives at the master end.
 ///
 TEST_F(serial_tests, writeWorks) {
-    ASSERT_EQ(port_->write("abc\n"), 4u);
+    ASSERT_EQ(port_->write("abc\n"), 4U);
     std::array<char, 5> buf {};
-    const ssize_t n = ::read(master_fd_, buf.data(), 4);
-    ASSERT_EQ(n, 4);
-    EXPECT_EQ(std::string(buf.data(), static_cast<size_t>(n)), "abc\n");
+    const ssize_t bytes_read = ::read(master_fd_, buf.data(), 4);
+    ASSERT_EQ(bytes_read, 4);
+    EXPECT_EQ(std::string(buf.data(), static_cast<size_t>(bytes_read)), "abc\n");
 }
 
 ///

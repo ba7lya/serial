@@ -10,6 +10,7 @@
 #include "win.hxx"
 
 #include <system_error>
+#include <utility>
 
 namespace ba7lya::serial {
 
@@ -55,9 +56,24 @@ std::wstring to_wide(const std::string& text) {
 /// @return The prefixed port name.
 ///
 std::wstring prefix_port(const std::wstring& port) {
-    constexpr std::wstring_view prefix = L"\\\\.\\";
+    constexpr std::wstring_view prefix = LR"(\\.\)";
     if (port.starts_with(prefix)) { return port; }
     return std::wstring(prefix) + port;
+}
+
+///
+/// @brief Reads the modem status word and tests one bit.
+/// @param handle Open port handle.
+/// @param mask Bit to test, e.g. MS_CTS_ON.
+/// @param line Line name for the error message.
+/// @return True when the line is asserted.
+///
+bool modem_status(HANDLE handle, DWORD mask, std::string_view line) {
+    DWORD status = 0;
+    if (!::GetCommModemStatus(handle, &status)) {
+        throw io_exception("Error getting the status of the " + std::string(line) + " line.");
+    }
+    return (status & mask) != 0;
 }
 
 } // namespace
@@ -66,14 +82,14 @@ std::wstring prefix_port(const std::wstring& port) {
 /// @brief Stores the configuration and opens the port when a port name was given.
 ///
 serial::impl::impl(
-    const std::string& port,
+    std::string port,
     std::uint32_t baudrate,
     data_bits bytesize,
     parity parity,
     stop_bits stopbits,
     flow_ctrl flowcontrol
 )
-    : port_(port)
+    : port_(std::move(port))
     , baudrate_(baudrate)
     , parity_(parity)
     , bytesize_(bytesize)
@@ -88,7 +104,9 @@ serial::impl::impl(
 serial::impl::~impl() {
     try {
         close();
-    } catch (...) {}
+    }
+    // NOLINTNEXTLINE(bugprone-empty-catch) -- destructors must not throw
+    catch (...) {}
 }
 
 ///
@@ -223,7 +241,7 @@ size_t serial::impl::available() {
 ///
 /// @brief Unsupported: Win32 comm API has no wait-for-readable primitive.
 ///
-bool serial::impl::wait_readable(std::uint32_t) {
+bool serial::impl::wait_readable(std::uint32_t /*timeout*/) {
     require_open("serial::wait_readable");
     throw io_exception("wait_readable is not implemented on Windows.");
 }
@@ -231,7 +249,7 @@ bool serial::impl::wait_readable(std::uint32_t) {
 ///
 /// @brief Unsupported on Windows; the caller can sleep itself.
 ///
-void serial::impl::wait_byte_times(size_t) {
+void serial::impl::wait_byte_times(size_t /*count*/) {
     require_open("serial::wait_byte_times");
     throw io_exception("wait_byte_times is not implemented on Windows.");
 }
@@ -287,7 +305,7 @@ void serial::impl::flush_tx_buffer() {
 ///
 /// @brief Unsupported: Win32 has no timed break facility.
 ///
-void serial::impl::send_break(int) {
+void serial::impl::send_break(int /*duration*/) {
     require_open("serial::send_break");
     throw io_exception("send_break is not supported on Windows.");
 }
@@ -326,19 +344,6 @@ bool serial::impl::wait_for_change() {
         && ::WaitCommEvent(fd_, &event, nullptr);
 }
 
-///
-/// @brief Reads the modem status word and tests one bit.
-/// @param mask Bit to test, e.g. MS_CTS_ON.
-/// @return True when the line is asserted.
-///
-static bool modem_status(HANDLE fd, DWORD mask, std::string_view line) {
-    DWORD status = 0;
-    if (!::GetCommModemStatus(fd, &status)) {
-        throw io_exception("Error getting the status of the " + std::string(line) + " line.");
-    }
-    return (status & mask) != 0;
-}
-
 /// @brief Returns the CTS line state.
 bool serial::impl::get_cts() {
     require_open("serial::get_cts");
@@ -367,7 +372,7 @@ bool serial::impl::get_cd() {
 /// @brief Stores the port address, trimming a redundant "\\.\" prefix if present.
 ///
 void serial::impl::set_port(const std::string& port) {
-    constexpr std::string_view prefix = "\\\\.\\\\";
+    constexpr std::string_view prefix = R"(\\.\)";
     if (port.starts_with(prefix)) { port_ = port.substr(prefix.size()); }
     else { port_ = port; }
 }

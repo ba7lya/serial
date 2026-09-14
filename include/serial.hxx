@@ -41,7 +41,7 @@ enum class parity : std::uint8_t { none = 0, odd = 1, even = 2, mark = 3, space 
 
 ///
 /// @brief Number of stop bits of the serial frame.
-///  one_point_five is only supported by some platforms and otherwise
+/// @note one_point_five is only supported by some platforms and otherwise
 /// handled as two stop bits.
 ///
 enum class stop_bits : std::uint8_t { one = 1, two = 2, one_point_five = 3 };
@@ -70,11 +70,17 @@ struct timeout {
 
     ///
     /// @brief Builds a timeout with a single absolute read/write timeout.
-    /// @param timeout Milliseconds to wait after a call to read or write before timing out.
+    /// @param ms Milliseconds to wait after a call to read or write before timing out.
     /// @return A timeout representing this simple timeout.
     ///
-    static constexpr timeout simple_timeout(std::uint32_t timeout) {
-        return { max(), timeout, 0, timeout, 0 };
+    static constexpr timeout simple_timeout(std::uint32_t ms) {
+        return {
+            .inter_byte_timeout = max(),
+            .read_timeout_constant = ms,
+            .read_timeout_multiplier = 0,
+            .write_timeout_constant = ms,
+            .write_timeout_multiplier = 0,
+        };
     }
 
     /// @brief Milliseconds between received bytes before a read times out (0 disables).
@@ -290,11 +296,13 @@ public:
         std::uint32_t write_timeout_multiplier
     ) {
         set_timeout(
-            timeout { inter_byte_timeout,
-                      read_timeout_constant,
-                      read_timeout_multiplier,
-                      write_timeout_constant,
-                      write_timeout_multiplier }
+            timeout {
+                .inter_byte_timeout = inter_byte_timeout,
+                .read_timeout_constant = read_timeout_constant,
+                .read_timeout_multiplier = read_timeout_multiplier,
+                .write_timeout_constant = write_timeout_constant,
+                .write_timeout_multiplier = write_timeout_multiplier,
+            }
         );
     }
 

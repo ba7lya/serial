@@ -100,14 +100,14 @@ bool standard_speed(std::uint32_t baudrate, speed_t& out) {
 /// @brief Stores the configuration and opens the port when a path was given.
 ///
 serial::impl::impl(
-    const std::string& port,
+    std::string port,
     std::uint32_t baudrate,
     data_bits bytesize,
     parity parity,
     stop_bits stopbits,
     flow_ctrl flowcontrol
 )
-    : port_(port)
+    : port_(std::move(port))
     , baudrate_(baudrate)
     , parity_(parity)
     , bytesize_(bytesize)
@@ -123,7 +123,9 @@ serial::impl::impl(
 serial::impl::~impl() {
     try {
         close();
-    } catch (...) {}
+    }
+    // NOLINTNEXTLINE(bugprone-empty-catch) -- destructors must not throw
+    catch (...) {}
 }
 
 ///
@@ -303,13 +305,13 @@ bool serial::impl::wait_readable(std::uint32_t timeout) {
     FD_SET(fd_, &readfds);
 
     timespec deadline = to_timespec(timeout);
-    const int r = ::pselect(fd_ + 1, &readfds, nullptr, nullptr, &deadline, nullptr);
+    const int ready = ::pselect(fd_ + 1, &readfds, nullptr, nullptr, &deadline, nullptr);
 
-    if (r < 0) {
+    if (ready < 0) {
         if (errno == EINTR) { return false; } // Interrupted, not an error.
         throw_errno("pselect");
     }
-    return r > 0 && FD_ISSET(fd_, &readfds);
+    return ready > 0 && FD_ISSET(fd_, &readfds);
 }
 
 ///
@@ -347,13 +349,13 @@ size_t serial::impl::read(std::span<std::uint8_t> buf) {
         );
         if (!wait_readable(step)) { continue; }
 
-        const ssize_t n = ::read(fd_, buf.data() + bytes_read, buf.size() - bytes_read);
-        if (n < 0) {
+        const ssize_t count = ::read(fd_, buf.data() + bytes_read, buf.size() - bytes_read);
+        if (count < 0) {
             if (errno == EINTR || errno == EAGAIN) { continue; }
             throw_errno("Error while reading from the serial port");
         }
-        if (n == 0) { break; }
-        bytes_read += static_cast<size_t>(n);
+        if (count == 0) { break; }
+        bytes_read += static_cast<size_t>(count);
     }
     return bytes_read;
 }
@@ -378,19 +380,20 @@ size_t serial::impl::write(std::span<const std::uint8_t> data) {
         FD_SET(fd_, &writefds);
 
         timespec deadline = to_timespec(total_timeout.remaining());
-        const int r = ::pselect(fd_ + 1, nullptr, &writefds, nullptr, &deadline, nullptr);
-        if (r < 0) {
+        const int ready = ::pselect(fd_ + 1, nullptr, &writefds, nullptr, &deadline, nullptr);
+        if (ready < 0) {
             if (errno == EINTR) { continue; }
             throw_errno("pselect");
         }
-        if (r == 0) { break; } // timeout
+        if (ready == 0) { break; } // timeout
 
-        const ssize_t n = ::write(fd_, data.data() + bytes_written, data.size() - bytes_written);
-        if (n < 0) {
+        const ssize_t count
+            = ::write(fd_, data.data() + bytes_written, data.size() - bytes_written);
+        if (count < 0) {
             if (errno == EINTR || errno == EAGAIN) { continue; }
             throw_errno("Error while writing to the serial port");
         }
-        bytes_written += static_cast<size_t>(n);
+        bytes_written += static_cast<size_t>(count);
     }
     return bytes_written;
 }

@@ -79,18 +79,18 @@ std::string get_port_name(HDEVINFO device_info_set, SP_DEVINFO_DATA& device_data
     );
     if (hkey == INVALID_HANDLE_VALUE) { return {}; }
 
-    const bool ok = ::RegQueryValueExW(
-                        hkey,
-                        L"PortName",
-                        nullptr,
-                        nullptr,
-                        reinterpret_cast<LPBYTE>(buffer.data()),
-                        &size_bytes
-                    )
-                 == ERROR_SUCCESS;
+    const bool found = ::RegQueryValueExW(
+                           hkey,
+                           L"PortName",
+                           nullptr,
+                           nullptr,
+                           reinterpret_cast<LPBYTE>(buffer.data()),
+                           &size_bytes
+                       )
+                    == ERROR_SUCCESS;
     ::RegCloseKey(hkey);
 
-    if (!ok || size_bytes < sizeof(wchar_t)) { return {}; }
+    if (!found || size_bytes < sizeof(wchar_t)) { return {}; }
     const size_t chars = (size_bytes / sizeof(wchar_t)) - 1; // drop the terminating NUL
     return utf8_encode({ buffer.data(), chars });
 }
@@ -111,7 +111,7 @@ std::string get_device_property(
     DWORD type = 0;
     DWORD size_bytes = 0;
 
-    const BOOL ok = ::SetupDiGetDeviceRegistryPropertyW(
+    const BOOL found = ::SetupDiGetDeviceRegistryPropertyW(
         device_info_set,
         &device_data,
         property,
@@ -121,9 +121,9 @@ std::string get_device_property(
         &size_bytes
     );
 
-    if (!ok || size_bytes <= sizeof(wchar_t)) { return {}; }
+    if (!found || size_bytes <= sizeof(wchar_t)) { return {}; }
     // SPDRP_HARDWAREID is REG_MULTI_SZ: keep only the first, NUL-terminated element.
-    const size_t max_chars = size_bytes / sizeof(wchar_t) - 1;
+    const size_t max_chars = (size_bytes / sizeof(wchar_t)) - 1;
     const size_t chars = wcsnlen(buffer.data(), max_chars);
     return utf8_encode({ buffer.data(), chars });
 }

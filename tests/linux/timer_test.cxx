@@ -27,9 +27,9 @@ namespace {
 ///
 TEST(timer_test, short_intervals) {
     for (uint32_t trial = 0; trial < 100; ++trial) {
-        const uint32_t ms = trial % 20;
-        const millisecond_timer timer(ms);
-        std::this_thread::sleep_for(std::chrono::milliseconds(ms) + 1ms);
+        const uint32_t millis = trial % 20;
+        const millisecond_timer timer(millis);
+        std::this_thread::sleep_for(std::chrono::milliseconds(millis) + 1ms);
         const int64_t remaining = timer.remaining();
         EXPECT_LE(remaining, 0) << "timer should have expired";
         EXPECT_GE(remaining, -10) << "expired by more than the sleep overhead";
@@ -49,13 +49,13 @@ TEST(timer_test, overlapping_long_intervals) {
     }
 
     std::this_thread::sleep_for(500ms);
-    for (size_t t = 0; t < timers.size(); ++t) {
-        EXPECT_NEAR(timers[t]->remaining(), 500 - static_cast<int64_t>(t), 20);
+    for (size_t idx = 0; idx < timers.size(); ++idx) {
+        EXPECT_NEAR(timers[idx]->remaining(), 500 - static_cast<int64_t>(idx), 20);
     }
 
     std::this_thread::sleep_for(500ms);
-    for (size_t t = 0; t < timers.size(); ++t) {
-        EXPECT_NEAR(timers[t]->remaining(), -static_cast<int64_t>(t), 25);
+    for (size_t idx = 0; idx < timers.size(); ++idx) {
+        EXPECT_NEAR(timers[idx]->remaining(), -static_cast<int64_t>(idx), 25);
     }
 }
 
