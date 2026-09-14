@@ -22,7 +22,7 @@ jobs:
     name: clang-format
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install tools
         run: |
           pip install --break-system-packages clang-format
@@ -40,14 +40,14 @@ jobs:
     name: clang-tidy (linux)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install clang-tidy 20
         run: |
           set -e
-          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key \
-            | tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+          sudo wget -qO /etc/apt/trusted.gpg.d/apt.llvm.org.asc \
+            https://apt.llvm.org/llvm-snapshot.gpg.key
           echo "deb https://apt.llvm.org/noble/ llvm-toolchain-noble-20 main" \
-            > /etc/apt/sources.list.d/llvm.list
+            | sudo tee /etc/apt/sources.list.d/llvm.list
           sudo apt-get update
           sudo apt-get install -y clang-tidy-20
       - name: Generate compile database
@@ -69,7 +69,7 @@ jobs:
       matrix:
         build_type: [Debug, Release]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y libgtest-dev libspdlog-dev ninja-build
       - name: Configure
@@ -83,16 +83,16 @@ jobs:
     name: build + test (MSVC)
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: recursive
       - name: Cache vcpkg
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: thirdparty/vcpkg/downloads
           key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json', 'thirdparty/vcpkg') }}
       - name: Configure
-        run: cmake --preset MSVC-2022-x64-Debug
+        run: cmake --preset MSVC-2022-x64-Ninja
       - name: Build
         run: cmake --build --preset MSVC-2022-x64-Debug
       - name: Test
