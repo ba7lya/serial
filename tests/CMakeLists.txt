@@ -32,4 +32,14 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_libraries(serial_unit_tests PRIVATE util)
 endif()
 
+# gtest_discover_tests executes the test binary to collect cases; vcpkg's
+# shared gtest would not be found without this copy (applocal is off by
+# default).
+if(WIN32)
+    add_custom_command(TARGET serial_unit_tests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                $<TARGET_FILE:GTest::gtest> $<TARGET_FILE_DIR:serial_unit_tests>
+    )
+endif()
+
 gtest_discover_tests(serial_unit_tests)
