@@ -19,6 +19,7 @@
 #include <setupapi.h>
 // clang-format on
 
+#include "log.hxx"
 #include "serial.hxx"
 
 namespace ba7lya::serial {
@@ -159,6 +160,7 @@ std::vector<serial_port_info> list_ports() {
     }
 
     ::SetupDiDestroyDeviceInfoList(device_info_set);
+    LOG_INFO("enumerated {} serial ports", ports.size());
     return ports;
 }
 

@@ -12,6 +12,8 @@
 #include <system_error>
 #include <utility>
 
+#include "log.hxx"
+
 namespace ba7lya::serial {
 
 namespace {
@@ -136,8 +138,10 @@ void serial::impl::open() {
 
     if (fd_ == INVALID_HANDLE_VALUE) {
         if (::GetLastError() == ERROR_FILE_NOT_FOUND) {
+            LOG_ERROR("port {} does not exist", port_);
             throw io_exception("Specified port, " + get_port() + ", does not exist.");
         }
+        LOG_ERROR("open {} failed with win32 error {}", port_, static_cast<int>(::GetLastError()));
         throw_last_error("Unknown error opening serial port");
     }
 
@@ -149,6 +153,7 @@ void serial::impl::open() {
         throw;
     }
     is_open_ = true;
+    LOG_INFO("opened {}", port_);
 }
 
 ///
@@ -164,6 +169,7 @@ void serial::impl::reconfigure() {
     if (!::GetCommState(fd_, &dcb)) { throw_last_error("Error getting the serial port state"); }
 
     // The DCB BaudRate field takes any DWORD; the standard CBR_* values are plain numbers.
+    LOG_DEBUG("reconfigure {} to {} baud", port_, baudrate_);
     dcb.BaudRate = baudrate_;
 
     switch (bytesize_) {
@@ -219,6 +225,7 @@ void serial::impl::close() {
     }
     fd_ = INVALID_HANDLE_VALUE;
     is_open_ = false;
+    LOG_DEBUG("closed {}", port_);
 }
 
 ///
@@ -263,6 +270,7 @@ size_t serial::impl::read(std::span<std::uint8_t> buf) {
     if (!::ReadFile(fd_, buf.data(), static_cast<DWORD>(buf.size()), &bytes_read, nullptr)) {
         throw_last_error("Error while reading from the serial port");
     }
+    LOG_TRACE("read {} bytes from {}", bytes_read, port_);
     return bytes_read;
 }
 
@@ -275,6 +283,7 @@ size_t serial::impl::write(std::span<const std::uint8_t> data) {
     if (!::WriteFile(fd_, data.data(), static_cast<DWORD>(data.size()), &bytes_written, nullptr)) {
         throw_last_error("Error while writing to the serial port");
     }
+    LOG_TRACE("wrote {} bytes to {}", bytes_written, port_);
     return bytes_written;
 }
 

@@ -19,6 +19,7 @@
 #include <utility>
 #include <vector>
 
+#include "log.hxx"
 #include "serial.hxx"
 
 namespace ba7lya::serial {
@@ -186,6 +187,7 @@ std::vector<serial_port_info> list_ports() {
         const auto [friendly_name, hardware_id] = get_sysfs_info(device);
         results.push_back({ device, friendly_name, hardware_id });
     }
+    LOG_INFO("enumerated {} serial ports", results.size());
     return results;
 }
 

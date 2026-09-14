@@ -25,6 +25,8 @@
 #include <utility>
 #include <vector>
 
+#include "log.hxx"
+
 namespace ba7lya::serial {
 
 namespace {
@@ -159,8 +161,10 @@ void serial::impl::open() {
             return;
         }
         if (errno == ENFILE || errno == EMFILE) {
+            LOG_ERROR("too many file handles to open {}", port_);
             throw io_exception("Too many file handles open.");
         }
+        LOG_ERROR("open {} failed: {}", port_, std::strerror(errno));
         throw_errno("Error opening serial port");
     }
 
@@ -172,6 +176,7 @@ void serial::impl::open() {
         throw;
     }
     is_open_ = true;
+    LOG_INFO("opened {}", port_);
 }
 
 ///
@@ -189,6 +194,8 @@ void serial::impl::reconfigure() {
         &= static_cast<tcflag_t>(~(ICANON | ECHO | ECHOE | ECHOK | ECHONL | ISIG | IEXTEN));
     options.c_oflag &= static_cast<tcflag_t>(~OPOST);
     options.c_iflag &= static_cast<tcflag_t>(~(INLCR | IGNCR | ICRNL | IGNBRK | IUCLC | PARMRK));
+
+    LOG_DEBUG("reconfigure {} to {} baud", port_, baudrate_);
 
     // Baud rate; custom rates fall through to the TIOCSSERIAL ioctl below.
     speed_t speed = 0;
@@ -277,6 +284,7 @@ void serial::impl::close() {
     }
     fd_ = -1;
     is_open_ = false;
+    LOG_DEBUG("closed {}", port_);
 }
 
 ///
@@ -340,7 +348,10 @@ size_t serial::impl::read(std::span<std::uint8_t> buf) {
     size_t bytes_read = 0;
     while (bytes_read < buf.size()) {
         const std::int64_t remaining = total_timeout.remaining();
-        if (remaining <= 0) { break; }
+        if (remaining <= 0) {
+            LOG_DEBUG("read timed out on {} after {} bytes", port_, bytes_read);
+            break;
+        }
 
         // Wait at most the smaller of the remaining total time and the inter-byte time.
         const auto step = std::min<std::uint32_t>(
@@ -357,6 +368,7 @@ size_t serial::impl::read(std::span<std::uint8_t> buf) {
         if (count == 0) { break; }
         bytes_read += static_cast<size_t>(count);
     }
+    LOG_TRACE("read {} bytes from {}", bytes_read, port_);
     return bytes_read;
 }
 
@@ -385,7 +397,10 @@ size_t serial::impl::write(std::span<const std::uint8_t> data) {
             if (errno == EINTR) { continue; }
             throw_errno("pselect");
         }
-        if (ready == 0) { break; } // timeout
+        if (ready == 0) {
+            LOG_DEBUG("write timed out on {} after {} bytes", port_, bytes_written);
+            break;
+        }
 
         const ssize_t count
             = ::write(fd_, data.data() + bytes_written, data.size() - bytes_written);
@@ -395,6 +410,7 @@ size_t serial::impl::write(std::span<const std::uint8_t> data) {
         }
         bytes_written += static_cast<size_t>(count);
     }
+    LOG_TRACE("wrote {} bytes to {}", bytes_written, port_);
     return bytes_written;
 }
 

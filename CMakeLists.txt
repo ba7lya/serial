@@ -7,14 +7,25 @@ project(ba7lya.serial LANGUAGES CXX)
 # --- build options ---
 option(${PROJECT_NAME}_BUILD_EXAMPLE "Build examples" ON )
 option(${PROJECT_NAME}_BUILD_TEST    "Build tests"    ON )
+option(${PROJECT_NAME}_ENABLE_LOG    "Compile spdlog-backed LOG_* calls" OFF)
 
 # --- target ---
 add_library(${PROJECT_NAME})
 add_library(ba7lya::serial ALIAS ${PROJECT_NAME})
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 target_compile_options(${PROJECT_NAME} PRIVATE "$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
+
+# --- logging ---
+# With ENABLE_LOG off, src/log.hxx expands LOG_* to nothing and spdlog is not
+# needed; with it on, the spdlog backend must be available.
+if(${PROJECT_NAME}_ENABLE_LOG)
+    find_package(spdlog CONFIG REQUIRED)
+    target_link_libraries(${PROJECT_NAME} PRIVATE spdlog::spdlog)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE BA7LYA_SERIAL_HAVE_SPDLOG)
+endif()
 
 if(WIN32)
     target_compile_definitions(${PROJECT_NAME} PRIVATE
