@@ -4,7 +4,8 @@
 /// @brief Smoke tests that drive a real serial port end to end, skipping when none is present.
 /// @version 0.2
 /// @date 2026-09-14
-/// @copyright Copyright (c) 2026
+/// @copyright Copyright (c) 2026 BA7LYA
+/// @license SPDX-License-Identifier: MIT
 ///
 
 #include <cstdint>

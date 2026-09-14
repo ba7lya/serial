@@ -4,7 +4,8 @@
 /// @brief Windows implementation of the serial class, built on the Win32 comm API.
 /// @version 0.2
 /// @date 2026-09-14
-/// @copyright Copyright (c) 2026
+/// @copyright Copyright (c) 2026 BA7LYA
+/// @license SPDX-License-Identifier: MIT
 ///
 
 #include "win.hxx"

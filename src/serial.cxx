@@ -4,7 +4,8 @@
 /// @brief Platform-independent facade for the serial class, forwarding to the per-platform impl.
 /// @version 0.2
 /// @date 2026-09-14
-/// @copyright Copyright (c) 2026
+/// @copyright Copyright (c) 2026 BA7LYA
+/// @license SPDX-License-Identifier: MIT
 ///
 
 #include "serial.hxx"

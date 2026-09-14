@@ -2,6 +2,7 @@
   "name": "ba7lya-serial",
   "version": "0.2.0",
   "description": "Cross platform serial port library using modern C++.",
+  "license": "MIT",
   "builtin-baseline": "a1cae005c39be7b18ba319fced856b68d7276271",
   "dependencies": [
     "gtest",

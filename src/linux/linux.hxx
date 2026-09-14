@@ -4,7 +4,8 @@
 /// @brief Linux implementation of the serial pimpl, based on termios and pselect.
 /// @version 0.2
 /// @date 2026-09-14
-/// @copyright Copyright (c) 2026
+/// @copyright Copyright (c) 2026 BA7LYA
+/// @license SPDX-License-Identifier: MIT
 ///
 
 #pragma once

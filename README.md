@@ -4,6 +4,9 @@
 
 Cross-platform serial port library written in modern C++.
 
+[![CI](https://github.com/ba7lya/serial/actions/workflows/ci.yml/badge.svg)](https://github.com/ba7lya/serial/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 ## 特性 (Features)
 
 - 单一门面类 `ba7lya::serial::serial`，pimpl 隔离平台实现
@@ -59,7 +62,8 @@ ctest --test-dir build
 | 选项 | 默认 | 说明 |
 | --- | --- | --- |
 | `ba7lya.serial_BUILD_EXAMPLE` | ON | 构建 examples/ |
-| `ba7lya.serial_BUILD_TEST` | OFF | 构建 tests/（需要 GTest） |
+| `ba7lya.serial_BUILD_TEST` | ON | 构建 tests/（需要 GTest） |
+| `ba7lya.serial_ENABLE_LOG` | OFF | 编译 spdlog 支撑的 LOG_* 日志调用 |
 
 ## 目录结构 (Layout)
 
@@ -72,6 +76,10 @@ examples/                示例程序（common/ 跨平台，win/ 平台专属）
 tests/                   GoogleTest 单元测试（common/ 跨平台，win/ 与 linux/ 平台专属）
 thirdparty/vcpkg         vcpkg submodule
 ```
+
+## 许可 (License)
+
+本项目基于 [MIT License](LICENSE) 授权。
 
 ## References
 

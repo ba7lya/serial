@@ -4,7 +4,8 @@
 /// @brief Windows-specific behavioral contract tests for the serial library.
 /// @version 0.2
 /// @date 2026-09-14
-/// @copyright Copyright (c) 2026
+/// @copyright Copyright (c) 2026 BA7LYA
+/// @license SPDX-License-Identifier: MIT
 ///
 
 #include <cstdint>
