@@ -68,8 +68,8 @@ include/                 公开头文件 (serial.hxx, exception.hxx)；安装时
 src/serial.cxx           平台无关门面
 src/win/                 Windows 后端 + 串口枚举
 src/linux/               Linux 后端 + 串口枚举
-examples/                示例程序（common/ 跨平台，win/ 与 linux/ 平台专属）
-tests/                   GoogleTest 单元测试（common/ 跨平台，linux/ pty 测试）
+examples/                示例程序（common/ 跨平台，win/ 平台专属）
+tests/                   GoogleTest 单元测试（common/ 跨平台，win/ 与 linux/ 平台专属）
 thirdparty/vcpkg         vcpkg submodule
 ```
 

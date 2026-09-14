@@ -13,6 +13,9 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         linux/pty_serial_test.cxx
         linux/timer_test.cxx
     )
+elseif(WIN32)
+    # Windows behavioral contracts (unsupported wait_*/send_break, modem lines).
+    list(APPEND test_sources win/behavior_test.cxx)
 endif()
 
 add_executable(serial_unit_tests ${test_sources})
