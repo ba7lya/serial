@@ -36,8 +36,7 @@ std::vector<std::string> glob(const std::vector<std::string>& patterns) {
     if (patterns.empty()) { return found; }
 
     glob_t results {};
-    // NOLINTNEXTLINE(concurrency-mt-unsafe) -- per-call glob_t, no shared
-    // state; glibc's other globals remain a documented list_ports caveat
+    // NOLINTNEXTLINE(concurrency-mt-unsafe) -- glob_t here is per-call state
     int retval = ::glob(patterns[0].c_str(), 0, nullptr, &results);
     for (auto it = patterns.begin() + 1; it != patterns.end(); ++it) {
         // NOLINTNEXTLINE(concurrency-mt-unsafe) -- same reason as above

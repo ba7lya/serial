@@ -153,8 +153,9 @@ void serial::impl::open() {
     if (port_.empty()) { throw std::invalid_argument("Empty port is invalid."); }
     if (is_open_) { throw serial_exception("serial port already open."); }
 
-    do { fd_ = ::open(port_.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK); }
-    while (fd_ == -1 && errno == EINTR); // Recoverable, retry.
+    const auto try_open = [&] { return ::open(port_.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK); };
+    fd_ = try_open();
+    while (fd_ == -1 && errno == EINTR) { fd_ = try_open(); } // Recoverable, retry.
     if (fd_ == -1) {
         if (errno == ENFILE || errno == EMFILE) {
             LOG_ERROR("too many file handles to open {}", port_);
@@ -438,8 +439,7 @@ void serial::impl::flush_tx_buffer() {
 ///
 void serial::impl::send_break(int duration) {
     require_open("serial::send_break");
-    // NOLINTNEXTLINE(concurrency-mt-unsafe) -- port handle is mutex-serialized
-    // by the facade; the underlying termios call is safe for this fd
+    // NOLINTNEXTLINE(concurrency-mt-unsafe) -- fd is serialized by the facade
     ::tcsendbreak(fd_, duration / 4);
 }
 

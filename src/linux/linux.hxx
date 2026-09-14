@@ -86,6 +86,7 @@ public:
     bool is_open() const;
 
     /// @return Bytes waiting in the kernel input queue.
+    [[nodiscard]]
     size_t available() const;
 
     ///
@@ -206,6 +207,7 @@ private:
     static void throw_errno(std::string_view context);
 
     /// @brief Reads one modem status bit via TIOCMGET.
+    [[nodiscard]]
     bool modem_line(int mask) const;
 
     /// @brief Writes the stored framing settings into the termios structure.
