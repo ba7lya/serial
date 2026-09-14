@@ -9,6 +9,9 @@ option(${PROJECT_NAME}_BUILD_EXAMPLE "Build examples" ON )
 option(${PROJECT_NAME}_BUILD_TEST    "Build tests"    ON )
 option(${PROJECT_NAME}_ENABLE_LOG    "Compile spdlog-backed LOG_* calls" OFF)
 
+# ctest support must be enabled at the top level for --test-dir to work
+include(CTest)
+
 # --- target ---
 add_library(${PROJECT_NAME})
 add_library(ba7lya::serial ALIAS ${PROJECT_NAME})
@@ -70,6 +73,5 @@ endif()
 
 # --- unit tests ---
 if(${PROJECT_NAME}_BUILD_TEST)
-    include(CTest)
     add_subdirectory(tests)
 endif()

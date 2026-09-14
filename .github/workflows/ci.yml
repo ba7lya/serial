@@ -1,0 +1,99 @@
+# CI: build, test and static analysis on every push and pull request.
+#
+# Jobs:
+#   format   -- clang-format (pip) over all C++ sources, --dry-run --Werror
+#   tidy     -- clang-tidy 20 (apt.llvm.org) driven by .clang-tidy + compile DB
+#   linux    -- GCC/Ninja build, unit tests through ctest (logging enabled)
+#   windows  -- MSVC/Ninja build via vcpkg submodule + preset, ctest
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  format:
+    name: clang-format
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: |
+          pip install --break-system-packages clang-format
+          sudo apt-get install -y dos2unix
+      - name: Normalize line endings
+        # .clang-format pins LineEnding: CRLF; checkout line endings depend on
+        # git config, so force CRLF in the working tree before the check.
+        run: |
+          git ls-files '*.cxx' '*.hxx' > sources.txt
+          xargs -a sources.txt unix2dos
+      - name: Check formatting
+        run: xargs -a sources.txt clang-format --dry-run --Werror
+
+  tidy:
+    name: clang-tidy (linux)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install clang-tidy 20
+        run: |
+          set -e
+          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key \
+            | tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+          echo "deb https://apt.llvm.org/noble/ llvm-toolchain-noble-20 main" \
+            > /etc/apt/sources.list.d/llvm.list
+          sudo apt-get update
+          sudo apt-get install -y clang-tidy-20
+      - name: Generate compile database
+        run: |
+          sudo apt-get install -y ninja-build
+          cmake --preset Linux-GCC-Debug-Ninja \
+            -Dba7lya.serial_BUILD_EXAMPLE=OFF -Dba7lya.serial_BUILD_TEST=OFF
+          cmake --build --preset Linux-GCC-Debug
+      - name: Run clang-tidy
+        run: |
+          clang-tidy-20 -p build-linux --quiet \
+            src/serial.cxx src/linux/linux.cxx src/linux/list_ports_linux.cxx
+
+  linux:
+    name: build + test (${{ matrix.build_type }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: [Debug, Release]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y libgtest-dev libspdlog-dev ninja-build
+      - name: Configure
+        run: cmake --preset Linux-GCC-Debug-Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -Dba7lya.serial_ENABLE_LOG=ON
+      - name: Build
+        run: cmake --build --preset Linux-GCC-Debug
+      - name: Test
+        run: ctest --test-dir build-linux --output-on-failure
+
+  windows:
+    name: build + test (MSVC)
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Cache vcpkg
+        uses: actions/cache@v4
+        with:
+          path: thirdparty/vcpkg/downloads
+          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json', 'thirdparty/vcpkg') }}
+      - name: Configure
+        run: cmake --preset MSVC-2022-x64-Debug
+      - name: Build
+        run: cmake --build --preset MSVC-2022-x64-Debug
+      - name: Test
+        run: ctest --test-dir build -C Debug --output-on-failure

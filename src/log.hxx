@@ -35,6 +35,9 @@
 
 #else
 
+// static_cast<void>(0) evaluates nothing (arguments must be side-effect free,
+// see above), parses in every statement position and is the no-op form the
+// C++ core guidelines endorse.
 #define LOG_TRACE(...)    static_cast<void>(0)
 #define LOG_DEBUG(...)    static_cast<void>(0)
 #define LOG_INFO(...)     static_cast<void>(0)

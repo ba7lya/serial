@@ -1,5 +1,10 @@
 # --- unit tests (GoogleTest) ---
-find_package(GTest CONFIG REQUIRED)
+# vcpkg ships a GTest config package; Debian/Ubuntu's libgtest-dev only has
+# the find-module, so try config mode first and fall back.
+find_package(GTest CONFIG QUIET)
+if(NOT GTest_FOUND)
+    find_package(GTest REQUIRED)
+endif()
 include(GoogleTest)
 
 set(test_sources
