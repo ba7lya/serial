@@ -70,15 +70,15 @@ struct timeout {
 
     ///
     /// @brief Builds a timeout with a single absolute read/write timeout.
-    /// @param ms Milliseconds to wait after a call to read or write before timing out.
+    /// @param millis Milliseconds to wait after a call to read or write before timing out.
     /// @return A timeout representing this simple timeout.
     ///
-    static constexpr timeout simple_timeout(std::uint32_t ms) {
+    static constexpr timeout simple_timeout(std::uint32_t millis) {
         return {
             .inter_byte_timeout = max(),
-            .read_timeout_constant = ms,
+            .read_timeout_constant = millis,
             .read_timeout_multiplier = 0,
-            .write_timeout_constant = ms,
+            .write_timeout_constant = millis,
             .write_timeout_multiplier = 0,
         };
     }

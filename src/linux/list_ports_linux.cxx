@@ -36,8 +36,11 @@ std::vector<std::string> glob(const std::vector<std::string>& patterns) {
     if (patterns.empty()) { return found; }
 
     glob_t results {};
+    // NOLINTNEXTLINE(concurrency-mt-unsafe) -- per-call glob_t, no shared
+    // state; glibc's other globals remain a documented list_ports caveat
     int retval = ::glob(patterns[0].c_str(), 0, nullptr, &results);
     for (auto it = patterns.begin() + 1; it != patterns.end(); ++it) {
+        // NOLINTNEXTLINE(concurrency-mt-unsafe) -- same reason as above
         retval = ::glob(it->c_str(), GLOB_APPEND, nullptr, &results);
     }
     if (retval == 0 || retval == GLOB_NOMATCH) {
@@ -75,8 +78,8 @@ std::string dirname(std::string_view path) {
 /// @return True when the path resolves.
 ///
 bool path_exists(const std::string& path) {
-    struct stat sb;
-    return ::stat(path.c_str(), &sb) == 0;
+    struct stat info {};
+    return ::stat(path.c_str(), &info) == 0;
 }
 
 ///
@@ -85,7 +88,7 @@ bool path_exists(const std::string& path) {
 /// @return The canonical path, or an empty string on failure.
 ///
 std::string realpath(const std::string& path) {
-    std::unique_ptr<char, decltype(&std::free)> resolved(
+    const std::unique_ptr<char, decltype(&std::free)> resolved(
         ::realpath(path.c_str(), nullptr),
         &std::free
     );
@@ -126,9 +129,9 @@ std::string usb_sysfs_hw_string(const std::string& sysfs_path) {
     const std::string serial = read_line(sysfs_path + "/serial");
     const std::string vid = read_line(sysfs_path + "/idVendor");
     const std::string pid = read_line(sysfs_path + "/idProduct");
-    std::string hw = "USB VID:PID=" + vid + ":" + pid;
-    if (!serial.empty()) { hw += " SNR=" + serial; }
-    return hw;
+    std::string hardware = "USB VID:PID=" + vid + ":" + pid;
+    if (!serial.empty()) { hardware += " SNR=" + serial; }
+    return hardware;
 }
 
 ///

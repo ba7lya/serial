@@ -26,23 +26,30 @@
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 #include <spdlog/spdlog.h>
 
+// NOLINTBEGIN(cppcoreguidelines-macro-usage) -- must wrap the spdlog macro
+// family to keep lazy formatting and compile-time level pruning.
 #define LOG_TRACE(...)    SPDLOG_TRACE(__VA_ARGS__)
 #define LOG_DEBUG(...)    SPDLOG_DEBUG(__VA_ARGS__)
 #define LOG_INFO(...)     SPDLOG_INFO(__VA_ARGS__)
 #define LOG_WARN(...)     SPDLOG_WARN(__VA_ARGS__)
 #define LOG_ERROR(...)    SPDLOG_ERROR(__VA_ARGS__)
 #define LOG_CRITICAL(...) SPDLOG_CRITICAL(__VA_ARGS__)
+// NOLINTEND(cppcoreguidelines-macro-usage)
 
 #else
 
 // static_cast<void>(0) evaluates nothing (arguments must be side-effect free,
 // see above), parses in every statement position and is the no-op form the
 // C++ core guidelines endorse.
+// NOLINTBEGIN(cppcoreguidelines-macro-usage) -- a logging facade must be
+// switchable at compile time; constexpr templates cannot vanish together
+// with the backend dependency.
 #define LOG_TRACE(...)    static_cast<void>(0)
 #define LOG_DEBUG(...)    static_cast<void>(0)
 #define LOG_INFO(...)     static_cast<void>(0)
 #define LOG_WARN(...)     static_cast<void>(0)
 #define LOG_ERROR(...)    static_cast<void>(0)
 #define LOG_CRITICAL(...) static_cast<void>(0)
+// NOLINTEND(cppcoreguidelines-macro-usage)
 
 #endif

@@ -34,6 +34,9 @@ Checks:
   - -cppcoreguidelines-pro-type-reinterpret-cast,
     -cppcoreguidelines-pro-bounds-pointer-arithmetic,
     -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  # ::open and ::ioctl are declared variadic by POSIX itself; every syscall
+  # call site would fire this check without any actual type risk
+  - -cppcoreguidelines-pro-type-vararg,
   # 90+ false positives here; also fights the deliberately grouped include
   # layout and the windows.h-before-initguid.h ordering constraint
   - -misc-include-cleaner,

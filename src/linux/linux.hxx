@@ -36,6 +36,7 @@ public:
     /// @brief Returns the time left until the deadline.
     /// @return Milliseconds remaining; negative once the deadline has passed.
     ///
+    [[nodiscard]]
     std::int64_t remaining() const {
         using namespace std::chrono;
         return duration_cast<milliseconds>(expiry_ - steady_clock::now()).count();
@@ -85,7 +86,7 @@ public:
     bool is_open() const;
 
     /// @return Bytes waiting in the kernel input queue.
-    size_t available();
+    size_t available() const;
 
     ///
     /// @brief Blocks via pselect until readable or the timeout expires.
@@ -95,7 +96,7 @@ public:
     bool wait_readable(std::uint32_t timeout);
 
     /// @brief Sleeps for the transmission time of count characters.
-    void wait_byte_times(size_t count);
+    void wait_byte_times(size_t count) const;
 
     ///
     /// @brief Reads until buf is full or the configured timeouts expire.
@@ -205,7 +206,7 @@ private:
     static void throw_errno(std::string_view context);
 
     /// @brief Reads one modem status bit via TIOCMGET.
-    bool modem_line(int mask);
+    bool modem_line(int mask) const;
 
     /// @brief Writes the stored framing settings into the termios structure.
     void reconfigure();

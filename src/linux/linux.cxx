@@ -37,7 +37,7 @@ namespace {
 /// @return The equivalent timespec.
 ///
 timespec to_timespec(std::int64_t millis) {
-    if (millis < 0) { millis = 0; }
+    millis = std::max<std::int64_t>(millis, 0);
     return timespec {
         .tv_sec = static_cast<time_t>(millis / 1000),
         .tv_nsec = static_cast<long>(millis % 1000) * 1000000L,
@@ -141,10 +141,9 @@ void serial::impl::require_open(std::string_view operation) const {
 /// @brief Throws an io_exception describing the current errno.
 ///
 void serial::impl::throw_errno(std::string_view context) {
-    throw io_exception(
-        std::error_code(errno, std::system_category()),
-        std::string(context) + ": " + std::strerror(errno)
-    );
+    const std::error_code code(errno, std::system_category());
+    LOG_ERROR("{}: {}", context, code.message());
+    throw io_exception(code, context.empty() ? code.message() : std::string(context));
 }
 
 ///
@@ -154,17 +153,13 @@ void serial::impl::open() {
     if (port_.empty()) { throw std::invalid_argument("Empty port is invalid."); }
     if (is_open_) { throw serial_exception("serial port already open."); }
 
-    fd_ = ::open(port_.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
+    do { fd_ = ::open(port_.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK); }
+    while (fd_ == -1 && errno == EINTR); // Recoverable, retry.
     if (fd_ == -1) {
-        if (errno == EINTR) {
-            open(); // Recoverable, retry.
-            return;
-        }
         if (errno == ENFILE || errno == EMFILE) {
             LOG_ERROR("too many file handles to open {}", port_);
             throw io_exception("Too many file handles open.");
         }
-        LOG_ERROR("open {} failed: {}", port_, std::strerror(errno));
         throw_errno("Error opening serial port");
     }
 
@@ -267,7 +262,7 @@ void serial::impl::update_byte_time() {
     const double bit_time_ns = 1e9 / baudrate_;
     byte_time_ns_ = static_cast<std::uint32_t>(
         bit_time_ns
-        * (1.0 + static_cast<int>(bytesize_) + static_cast<int>(parity_ != parity::none ? 1 : 0)
+        * (1.0 + static_cast<int>(bytesize_) + static_cast<double>(parity_ != parity::none)
            + stop_bits_count(stopbits_))
     );
 }
@@ -295,7 +290,7 @@ bool serial::impl::is_open() const { return is_open_; }
 ///
 /// @brief Asks the kernel how many bytes are queued for reading.
 ///
-size_t serial::impl::available() {
+size_t serial::impl::available() const {
     if (!is_open_) { return 0; }
     int count = 0;
     if (::ioctl(fd_, TIOCINQ, &count) == -1) { throw_errno("ioctl(TIOCINQ)"); }
@@ -312,7 +307,7 @@ bool serial::impl::wait_readable(std::uint32_t timeout) {
     FD_ZERO(&readfds);
     FD_SET(fd_, &readfds);
 
-    timespec deadline = to_timespec(timeout);
+    const timespec deadline = to_timespec(timeout);
     const int ready = ::pselect(fd_ + 1, &readfds, nullptr, nullptr, &deadline, nullptr);
 
     if (ready < 0) {
@@ -325,7 +320,7 @@ bool serial::impl::wait_readable(std::uint32_t timeout) {
 ///
 /// @brief Sleeps for the time needed to transmit count bytes at the current settings.
 ///
-void serial::impl::wait_byte_times(size_t count) {
+void serial::impl::wait_byte_times(size_t count) const {
     std::this_thread::sleep_for(
         std::chrono::nanoseconds(static_cast<std::uint64_t>(byte_time_ns_) * count)
     );
@@ -339,8 +334,8 @@ size_t serial::impl::read(std::span<std::uint8_t> buf) {
 
     // Total budget: constant + multiplier * requested bytes.
     const std::int64_t total_ms = static_cast<std::int64_t>(timeout_.read_timeout_constant)
-                                + static_cast<std::int64_t>(timeout_.read_timeout_multiplier)
-                                      * static_cast<std::int64_t>(buf.size());
+                                + (static_cast<std::int64_t>(timeout_.read_timeout_multiplier)
+                                   * static_cast<std::int64_t>(buf.size()));
     const millisecond_timer total_timeout(
         static_cast<std::uint32_t>(std::max<std::int64_t>(total_ms, 0))
     );
@@ -379,8 +374,8 @@ size_t serial::impl::write(std::span<const std::uint8_t> data) {
     require_open("serial::write");
 
     const std::int64_t total_ms = static_cast<std::int64_t>(timeout_.write_timeout_constant)
-                                + static_cast<std::int64_t>(timeout_.write_timeout_multiplier)
-                                      * static_cast<std::int64_t>(data.size());
+                                + (static_cast<std::int64_t>(timeout_.write_timeout_multiplier)
+                                   * static_cast<std::int64_t>(data.size()));
     const millisecond_timer total_timeout(
         static_cast<std::uint32_t>(std::max<std::int64_t>(total_ms, 0))
     );
@@ -391,7 +386,7 @@ size_t serial::impl::write(std::span<const std::uint8_t> data) {
         FD_ZERO(&writefds);
         FD_SET(fd_, &writefds);
 
-        timespec deadline = to_timespec(total_timeout.remaining());
+        const timespec deadline = to_timespec(total_timeout.remaining());
         const int ready = ::pselect(fd_ + 1, nullptr, &writefds, nullptr, &deadline, nullptr);
         if (ready < 0) {
             if (errno == EINTR) { continue; }
@@ -443,7 +438,9 @@ void serial::impl::flush_tx_buffer() {
 ///
 void serial::impl::send_break(int duration) {
     require_open("serial::send_break");
-    ::tcsendbreak(fd_, static_cast<int>(duration / 4));
+    // NOLINTNEXTLINE(concurrency-mt-unsafe) -- port handle is mutex-serialized
+    // by the facade; the underlying termios call is safe for this fd
+    ::tcsendbreak(fd_, duration / 4);
 }
 
 ///
@@ -475,7 +472,7 @@ void serial::impl::set_dtr(bool level) {
 ///
 /// @brief Reads a modem status bit through TIOCMGET.
 ///
-bool serial::impl::modem_line(int mask) {
+bool serial::impl::modem_line(int mask) const {
     int status = 0;
     if (::ioctl(fd_, TIOCMGET, &status) == -1) { throw_errno("ioctl(TIOCMGET)"); }
     return (status & mask) != 0;

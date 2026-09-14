@@ -35,18 +35,18 @@ class io_exception : public std::system_error {
 public:
     ///
     /// @brief Wraps an OS error code with the default context.
-    /// @param ec The underlying error code (Windows GetLastError or errno based).
+    /// @param code The underlying error code (Windows GetLastError or errno based).
     ///
-    explicit io_exception(std::error_code ec)
-        : std::system_error(ec, "I/O operation failed") {}
+    explicit io_exception(std::error_code code)
+        : std::system_error(code, "I/O operation failed") {}
 
     ///
     /// @brief Wraps an OS error code with additional context.
-    /// @param ec The underlying error code.
+    /// @param code The underlying error code.
     /// @param context Human readable description of the failed operation.
     ///
-    io_exception(std::error_code ec, const std::string& context)
-        : std::system_error(ec, context) {}
+    io_exception(std::error_code code, const std::string& context)
+        : std::system_error(code, context) {}
 
     ///
     /// @brief Builds a pure logical I/O error without an OS error code.
